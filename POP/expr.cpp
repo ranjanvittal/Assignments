@@ -174,8 +174,12 @@ Expr* atomic_expr(char* &s)
     {
         int k = 0;
         int length = strlen(s);
+        int ten_power = 1;
         while(i<length && s[i] >= '0' && s[i] <= '9')
-            k = k*10 + s[i++]-'0';
+        {
+            k = k + (s[i++]-'0')*ten_power;
+            ten_power = ten_power*10;
+        }
 
         s = s + i;
         return new IntExpr(k);
@@ -215,7 +219,7 @@ Expr* multiply_expr(char*& s)
             exit(0);
         }
         Expr* f = multiply_expr(s);
-        return new MultiplyExpr(e, f);
+        return new MultiplyExpr(f, e);
     }
     return e;
 }
@@ -252,6 +256,7 @@ int main(){
 
     i = 0;
     scanf("%c",&ch);
+
     while(1){
         scanf("%c", &ch);
         if(ch == '\n'){
@@ -264,7 +269,15 @@ int main(){
         if(ch != ' ' && ch != '\t')
             input[i++] = ch;
     }
-    input[i] ='\0';
+
+    input[i] = '\0';
+    int length = strlen(input);
+    for(i = 0; i < length/2; i++){
+        char temp = input[i];
+        input[i] = input[length - 1 - i];
+        input[length -1 - i] = temp;
+    }
+    input[length] = '\0';
     s = input;
     Expr* c = add_expr(s) -> evaluate();
     if(strlen(s) != 0)
