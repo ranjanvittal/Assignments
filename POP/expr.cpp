@@ -94,7 +94,14 @@ public:
         return c;
     }
 
-
+    void print(){
+        for(int i = 0; i < number_of_rows; i++)
+        {
+            for(int j = 0; j< number_of_columns; j++)
+                printf("%d ", elements[i][j]);
+            printf("\n");
+        }
+    }
 };
 
 Matrix operator*(int a, Matrix b){
@@ -320,7 +327,8 @@ int main(){
 
     input[i] = '\0';
     int length = strlen(input);
-
+    s = input;
+    add_expr(s);
     for(i = 0; i < length/2; i++){
         char temp = input[i];
         input[i] = input[length - 1 - i];
@@ -338,16 +346,15 @@ int main(){
     input[length] = '\0';
     s = input;
     Expr* c = add_expr(s) -> evaluate();
+
     if(*s != '\0')
         error_handler.junk();
+
     if(c->type() == 1)
         printf("%d\n", c->int_value());
+
     else
-    {
-        Matrix b = c->mat_value();
-        for(i = 0 ; i < b.number_of_rows; i++)
-            for(j = 0; j < b.number_of_columns; j++)
-                printf("%d\n", b.elements[i][j]);
-    }
+        c->mat_value().print();
+
     c->destruct();
 }
