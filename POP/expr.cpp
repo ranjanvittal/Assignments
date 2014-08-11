@@ -1,6 +1,8 @@
 #include<stdio.h>
 #include<assert.h>
 #include<string.h>
+#include<fstream>
+using namespace std;
 
 class ErrorHandler{
 public:
@@ -55,6 +57,14 @@ public:
     }
     void junk(){
         printf("junk expression got\n");
+        exit(0);
+    }
+    void faulty_command_line(){
+        printf("Faulty number of commandline arguments");
+        exit(0);
+    }
+    void faulty_file(){
+        printf("File Should be of the form : one integer with the corresponding matrix of size nXn");
         exit(0);
     }
 } error_handler;
@@ -296,36 +306,37 @@ Expr* add_expr(char*& s)
     return e;
 }
 
-int main(){
-    char input[100];
+int main(int argc, char* argvs[]){
+    //char input[100];
     char ch;
     char* s;
     int i;
     int j;
     int n;
-    scanf("%d", &n);
+    if(argc!=3)
+        error_handler.faulty_command_line();
+    FILE* f = fopen(argvs[1], "r");
+
+    if(feof(f))
+        error_handler.faulty_file();
+
+    fscanf(f, "%d", &n);
+
+    if(feof(f))
+        error_handler.faulty_file();
+
     a.number_of_rows = n;
     a.number_of_columns = n;
+
     for (i = 0 ; i < n;i++)
-        for(j = 0 ; j < n; j++)
-            scanf("%d", &a.elements[i][j]);
-
-    i = 0;
-    scanf("%c",&ch);
-
-    while(1){
-        scanf("%c", &ch);
-        if(ch == '\n'){
-            if(i == 0){
-                error_handler.no_input();
-            }
-            break;
+        for(j = 0 ; j < n; j++){
+            fscanf(f,"%d", &a.elements[i][j]);
+            if(feof(f) && i!=n-1 && j!=n-1)
+                error_handler.faulty_file();
         }
-        if(ch != ' ' && ch != '\t')
-            input[i++] = ch;
-    }
 
-    input[i] = '\0';
+    fclose(f);
+    char *input = argvs[2];
     int length = strlen(input);
     s = input;
     add_expr(s);
