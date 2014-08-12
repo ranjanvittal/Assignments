@@ -60,11 +60,11 @@ public:
         exit(0);
     }
     void faulty_command_line(){
-        printf("Faulty number of commandline arguments");
+        printf("Faulty number of commandline arguments\n");
         exit(0);
     }
     void faulty_file(){
-        printf("File Should be of the form : one integer with the corresponding matrix of size nXn");
+        printf("File Should be of the form : one integer with the corresponding matrix of size nXn\n");
         exit(0);
     }
 } error_handler;
@@ -307,11 +307,10 @@ Expr* add_expr(char*& s)
 }
 
 int main(int argc, char* argvs[]){
-    //char input[100];
     char ch;
     char* s;
     int i;
-    int j;
+    int j = 0;
     int n;
     if(argc!=3)
         error_handler.faulty_command_line();
@@ -336,16 +335,24 @@ int main(int argc, char* argvs[]){
         }
 
     fclose(f);
-    char *input = argvs[2];
-    int length = strlen(input);
+    char input[100];
+    int length = strlen(argvs[2]);
+    j = 0;
+    for(i=0;i<length;i++){
+        if(argvs[2][i] != ' ' && argvs[2][i] != '\t')
+            input[j++] = argvs[2][i];
+    }
+    input[j] = '\0';
     s = input;
-    add_expr(s);
+    length =j;
+    Expr* b = add_expr(s);
+    b->destruct();
+
     for(i = 0; i < length/2; i++){
         char temp = input[i];
         input[i] = input[length - 1 - i];
         input[length -1 - i] = temp;
     }
-
     for(i = 0; i < length; i++){
         if(input[i] == '(')
             input[i] = ')';
@@ -356,16 +363,19 @@ int main(int argc, char* argvs[]){
 
     input[length] = '\0';
     s = input;
-    Expr* c = add_expr(s) -> evaluate();
+
+    Expr* c = add_expr(s);
+    Expr* d = c->evaluate();
 
     if(*s != '\0')
         error_handler.junk();
 
-    if(c->type() == 1)
-        printf("%d\n", c->int_value());
+    if(d->type() == 1)
+        printf("%d\n", d->int_value());
 
     else
-        c->mat_value().print();
+        d->mat_value().print();
 
     c->destruct();
+    d->destruct();
 }
