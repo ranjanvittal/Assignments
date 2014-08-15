@@ -14,6 +14,31 @@ struct SymbolTable{
     char* value;
 } definitions[MAX_DEFINITIONS];
 
+struct SymbolTable get_definition(char* identifier){
+    int i = 0;
+    for(i = 0; i < no_of_definitions; i++){
+        if(strcmp(definitions[i].key, identifier) == 0)
+            return definitions[i];
+    }
+    printf("error");
+    exit(0);
+}
+
+char* modify_if_present(struct SymbolTable s, char* identifier, char** arguments){
+    char** parameters = s.parameters;
+    int i;
+    for(i = 0; i < s.no_of_parameters; i++){
+        if(strcmp(parameters[i], identifier) == 0){
+            return strdup(arguments[i]);
+        }
+    }
+    return strdup("\0");
+}
+
+int condition_for_identifier(char a){
+    return (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z') || (a >= '0' && a <= '9') || (a == '_');
+}
+
 void routine_for_definitions(char* identifier, char* parameters, char* value){
     int i = 0;
     int k;
@@ -35,6 +60,33 @@ void routine_for_definitions(char* identifier, char* parameters, char* value){
     definitions[no_of_definitions].value = value;
     no_of_definitions++;
     free(parameters);
+}
+
+char* get_value_for_key(char* identifier, char** arguments){
+    struct SymbolTable definition = get_definition(identifier);
+    int i = 0;
+    int k = 0;
+    char* value = definition.value;
+    char sub_value[100];
+    char a[100];
+    while(i < strlen(value)){
+        k = 0;
+        while(condition_for_identifier(value[i])){
+            a[k++] = value[i++];
+        }
+        a[k] = '\0';
+        if(a[0] != '\0'){
+            char* modified = modify_if_present(definition, a, arguments);
+            if(modified[0] != '\0')
+                strcat(sub_value, modified);
+            else
+                strcat(sub_value, a);
+            free(modified);
+        }
+        else
+            strcat(sub_value, &value[i]);
+    }
+    return strdup(sub_value);
 }
 %}
 %union{
