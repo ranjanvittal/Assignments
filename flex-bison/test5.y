@@ -4,9 +4,41 @@
 #include<stdlib.h>
 #include<string.h>
 #define CHAR_SIZE sizeof(char)
+#define MAX_DEFINITIONS 100
+#define MAX_ARGUMENTS 100
+int no_of_definitions = 0;
+struct SymbolTable{
+    char* key;
+    char** parameters;
+    int no_of_parameters;
+    char* value;
+} definitions[MAX_DEFINITIONS];
+
+void routine_for_definitions(char* identifier, char* parameters, char* value){
+    int i = 0;
+    int k;
+    int l = 0;
+    char a[100];
+    char* p[MAX_ARGUMENTS];
+    while(i<strlen(parameters)){
+        k = 0;
+        while(parameters[i] != '\0' && parameters[i] != ','){
+            a[k++] = parameters[i];
+            i++;
+        }
+        a[k] = '\0';
+        p[l++] = strdup(a);
+    }
+    definitions[no_of_definitions].key = identifier;
+    definitions[no_of_definitions].parameters = p;
+    definitions[no_of_definitions].no_of_parameters = l;
+    definitions[no_of_definitions].value = value;
+    no_of_definitions++;
+    free(parameters);
+}
 %}
 %union{
-        char* sval;
+    char* sval;
 }
 
 %token  PUBLIC
@@ -69,10 +101,6 @@
 %type<sval> Expression
 %type<sval> Op
 %type<sval> PrimaryExpression
-%type<sval> MacroDefinitions
-%type<sval> MacroDefinition
-%type<sval> MacroDefExpression
-%type<sval> MacroDefStatement
 %type<sval> DefineParameters
 %type<sval> CommaIdentifiers
 
@@ -83,9 +111,8 @@ goal                :   Program {printf("%s\n", $1);exit(0);};
 
 Program             :   MacroDefinitions MainClass TypeDeclarations
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + strlen($3) + 3)*CHAR_SIZE);
-                            sprintf($$, "%s%s\n%s", $1, $2, $3);
-                            free($1);
+                            $$ = malloc((strlen($2) + strlen($3) + 3)*CHAR_SIZE);
+                            sprintf($$, "%s\n%s", $2, $3);
                             free($2);
                             free($3);
                         }
@@ -94,7 +121,7 @@ MainClass           :   CLASS Identifier LCPAREN PUBLIC STATIC VOID
                         MAIN LPAREN STRING LSPAREN RSPAREN Identifier RPAREN LCPAREN SYSTEM LPAREN Expression RPAREN SEMICOLON RCPAREN RCPAREN
                         {
                             char s[200];
-                            sprintf(s, "class %s {\npublic static void main(String[] %s){\n System.out.println(%s);\n}}", $2, $12, $17);
+                            sprintf(s, "class %s {\npublic static void main(String[] %s) {\n System.out.println(%s);\n}}", $2, $12, $17);
                             $$ = strdup(s);
                             free($2);
                             free($12);
@@ -376,37 +403,22 @@ PrimaryExpression   :   Integer {$$ = $1;}
                             free($2);
                         };
 
-MacroDefinitions    :   MacroDefinition MacroDefinitions
-                        {
-                            $$ = malloc((strlen($1) + strlen($2) + 3)*CHAR_SIZE);
-                            sprintf($$, "%s\n%s", $1, $2);
-                            free($1);
-                            free($2);
-                        }
-                        |
-                        { $$ = strdup("\0");}
+MacroDefinitions    :   MacroDefinition MacroDefinitions {}
+                        |   {}
 
-MacroDefinition     :   MacroDefExpression {$$ = $1;}
-                        |   MacroDefStatement {$$ = $1;};
+MacroDefinition     :   MacroDefExpression {}
+                        |   MacroDefStatement {};
 
 MacroDefStatement   :   DEFINE Identifier LPAREN DefineParameters RPAREN LCPAREN Statements
                         RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($4) + strlen($7) + 16)*CHAR_SIZE);
-                            sprintf($$, "#define %s(%s) {%s}", $2, $4, $7);
-                            free($2);
-                            free($4);
-                            free($7);
+                            routine_for_definitions($2, $4, $7);
                         };
 
 MacroDefExpression  :   DEFINE Identifier LPAREN DefineParameters RPAREN LPAREN
                         Expression RPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($4) + strlen($7) + 16)*CHAR_SIZE);
-                            sprintf($$, "#define %s(%s) (%s)", $2, $4, $7);
-                            free($2);
-                            free($4);
-                            free($7);
+                            routine_for_definitions($2, $4, $7);
                         };
 
 DefineParameters    :   Identifier CommaIdentifiers
@@ -422,7 +434,7 @@ DefineParameters    :   Identifier CommaIdentifiers
 CommaIdentifiers    :   COMMA Identifier CommaIdentifiers
                         {
                             $$ = malloc((strlen($2) + strlen($3) + 4)*CHAR_SIZE);
-                            sprintf($$, ", %s%s", $2, $3);
+                            sprintf($$, ",%s%s", $2, $3);
                             free($2);
                             free($3);
                         }
@@ -433,6 +445,7 @@ CommaIdentifiers    :   COMMA Identifier CommaIdentifiers
 
 int yyerror(char * s){
     printf("%s \n",s);
+    return 1;
 }
 
 int main(){
