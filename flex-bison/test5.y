@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#define CHAR_SIZE sizeof(char)
 %}
 %union{
         char* sval;
@@ -67,7 +68,7 @@ goal                :   Program {printf("%s\n", $1);exit(0);};
 
 Program             :   MainClass TypeDeclarations
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 2)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + 2)*CHAR_SIZE);
                             sprintf($$, "%s\n%s", $1, $2);
                             free($1);
                             free($2);
@@ -86,7 +87,7 @@ MainClass           :   CLASS Identifier LCPAREN PUBLIC STATIC VOID
 
 TypeDeclarations :   TypeDeclaration TypeDeclarations
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 2)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + 2)*CHAR_SIZE);
                             sprintf($$, "%s\n%s", $1, $2);
                         }
                         |
@@ -98,7 +99,7 @@ TypeDeclaration     :   CLASS Identifier EXTENDS Identifier LCPAREN
                         Declarations MethodDeclarations
                         RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($4) + strlen($6) + strlen($7) + 20)*sizeof(char));
+                            $$ = malloc((strlen($2) + strlen($4) + strlen($6) + strlen($7) + 20)*CHAR_SIZE);
                             sprintf($$, "class %s extends %s{\n%s%s}", $2, $4, $6, $7);
                         }
                         |
@@ -106,13 +107,13 @@ TypeDeclaration     :   CLASS Identifier EXTENDS Identifier LCPAREN
                         MethodDeclarations
                         RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($4) + strlen($5) + 10)*sizeof(char));
+                            $$ = malloc((strlen($2) + strlen($4) + strlen($5) + 10)*CHAR_SIZE);
                             sprintf($$, "class %s{\n%s%s}", $2, $4, $5);
                         }
 
 Declarations     :   Declaration Declarations
                     {
-                        $$ = malloc((strlen($1) + strlen($2) + 2)*sizeof(char));
+                        $$ = malloc((strlen($1) + strlen($2) + 2)*CHAR_SIZE);
                         sprintf($$, "%s\n%s", $1, $2);
                         free($1);
                         free($2);
@@ -121,7 +122,7 @@ Declarations     :   Declaration Declarations
 
 Declaration         :   Type Identifier SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 3)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + 3)*CHAR_SIZE);
                             sprintf($$, "%s %s;", $1, $2);
                             free($1);
                             free($2);
@@ -129,7 +130,7 @@ Declaration         :   Type Identifier SEMICOLON
 
 MethodDeclarations  :   MethodDeclaration MethodDeclarations
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 2)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + 2)*CHAR_SIZE);
                             sprintf($$, "%s\n%s", $1, $2);
                             free($1);
                             free($2);
@@ -140,7 +141,7 @@ MethodDeclaration   :   PUBLIC Type Identifier LPAREN Arguments RPAREN LCPAREN
                         Declarations  Statements RETURN
                         Expression SEMICOLON RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($3) + strlen($5) + strlen($8) + strlen($9) + strlen($11) + 28)*sizeof(char));
+                            $$ = malloc((strlen($2) + strlen($3) + strlen($5) + strlen($8) + strlen($9) + strlen($11) + 28)*CHAR_SIZE);
                             sprintf($$ "public %s %s(%s){\n%s%sreturn %s;\n}", $2, $3, $5, $8, $9, $11);
                             free($2);
                             free($3);
@@ -151,7 +152,7 @@ MethodDeclaration   :   PUBLIC Type Identifier LPAREN Arguments RPAREN LCPAREN
                         }
 Arguments           :   Identifier CommaIdentifiers
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 1)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + 1)*CHAR_SIZE);
                             sprintf($$, "%s%s", $1, $2);
                             free($1);
                             free($2);
@@ -167,7 +168,7 @@ Arguments           :   Identifier CommaIdentifiers
 
 CommaIdentifiers    :   CommaIdentifier CommaIdentifiers
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 1)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + 1)*CHAR_SIZE);
                             sprintf($$, "%s%s", $1, $2);
                             free($1);
                             free($2);
@@ -176,33 +177,33 @@ CommaIdentifiers    :   CommaIdentifier CommaIdentifiers
 
 CommaIdentifier     :   COMMA Identifier
                         {
-                            $$ = malloc((strlen($2)+2)*sizeof(char));
+                            $$ = malloc((strlen($2)+2)*CHAR_SIZE);
                             sprintf($$, ", %s", $2);
                             free($2);
                         }
 
 Statement           :   LCPAREN Statements RCPAREN
                         {
-                            $$ = malloc((strlen($2) + 3)*sizeof(char));
+                            $$ = malloc((strlen($2) + 3)*CHAR_SIZE);
                             sprintf($$, "{%s}", $2);
                             free($2);
                         }
                         |    SYSTEM LPAREN Expression RPAREN SEMICOLON
                         {
-                            $$ = malloc((strlen($3) + 24)*sizeof(char));
+                            $$ = malloc((strlen($3) + 24)*CHAR_SIZE);
                             sprintf($$, "System.out.println(%s);", $3);
                             free($3);
                         }
                         |   Identifier EQUALTO Expression SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 5)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($3) + 5)*CHAR_SIZE);
                             sprintf($$, "%s = %s;", $1, $3);
                             free($1);
                             free($3);
                         }
                         |   Identifier LSPAREN Expression RSPAREN EQUALTO Expression SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + strlen($6) + 10)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($3) + strlen($6) + 10)*CHAR_SIZE);
                             sprintf($$, "%s[%s] = %s;", $1, $3, $6);
                             free($1);
                             free($3);
@@ -210,13 +211,68 @@ Statement           :   LCPAREN Statements RCPAREN
                         }
                         |   IF LPAREN Expression RPAREN Statement ELSE Statement
                         {
+                            $$ = malloc((strlen($3) + strlen($5) + strlen($7) + 12)*CHAR_SIZE);
+                            sprintf("if(%s)\n%s\nelse\n%s", $3, $5, $7);
+                            free($3);
+                            free($5);
+                            free($7);
+                        }
+                        |   IF LPAREN Expression RPAREN Statement
+                        {
+                            $$ = malloc((strlen($3) + strlen($5) + 8)*CHAR_SIZE);
+                            sprintf($$, "if(%s)\n%s", $3, $5);
+                            free($3);
+                            free($5);
+                        }
+                        |   while LPAREN Expression RPAREN Statement
+                        {
+                            $$ = malloc((strlen($3) + strlen($5) + 10)*CHAR_SIZE);
+                            sprintf($$, "while(%s)\n%s", $3, $5);
+                            free($3);
+                            free($5);
+                        }
+                        |   Identifier LPAREN Expressions RPAREN SEMICOLON
+                         {
+                            $$ = malloc((strlen($1) + strlen($3) + 5)*CHAR_SIZE);
+                            sprintf($$, "%s(%s);", $1, $3);
+                            free($1);
+                            free($3);
+                        };
 
+Expressions         :   Expression CommaExpressions
+                        {
+                            $$ = malloc((strlen($1) + strlen($2) + 3)*CHAR_SIZE);
+                            sprintf($$, "%s%s", $1, $2);
+                            free($1);
+                            free($2);
+                        }
+                        |   Expression
+                        {
+                            $$ = $1;
+                        }
+                        |
+                        {
+                            $$ = strdup("\0");
                         }
 
-                        |   IF LPAREN Expression RPAREN Statement
-                        |   while LPAREN Expression RPAREN Statement
-                        |   Identifier LPAREN Expressions RPAREN SEMICOLON
+CommaExpressions    :   CommaExpression CommaExpressions
+                        {
+                            $$ = malloc((strlen($1) + strlen($2) + 1)*CHAR_SIZE);
+                            sprintf($$, "%s%s", $1, $2);
+                            free($1);
+                            free($2);
+                        }
+                        |
+                        {
+                            $$ = strdup("\0");
+                        }
 
+CommaExpression     :   COMMA Expression
+                        {
+                            $$ = malloc((strlen($2)+2)*CHAR_SIZE);
+                            sprintf($$, ", %s", $2);
+                            free($2);
+                        }
 
 Type                :   INT LSPAREN RSPAREN  {$$ = strdup("int[]");}
                         |    BOOLEAN {$$ = strdup("boolean");}
@@ -225,7 +281,7 @@ Type                :   INT LSPAREN RSPAREN  {$$ = strdup("int[]");}
 
 Expression          :   PrimaryExpression Op PrimaryExpression
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + strlen($3) + 1)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($2) + strlen($3) + 1)*CHAR_SIZE);
                             sprintf($$, "%s%s%s", $1, $2, $3);
                             free($1);
                             free($2);
@@ -233,16 +289,31 @@ Expression          :   PrimaryExpression Op PrimaryExpression
                         }
                         |   PrimaryExpression LSPAREN PrimaryExpression RSPAREN
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 3)*sizeof(char));
+                            $$ = malloc((strlen($1) + strlen($3) + 3)*CHAR_SIZE);
                             sprintf($$, "%s[%s]", $1, $3);
                             free($1);
                             free($3);
                         }
                         |   PrimaryExpression LENGTH
                         {
-                            $$ = malloc((strlen($1) + 8)*sizeof(char));
+                            $$ = malloc((strlen($1) + 8)*CHAR_SIZE);
                             sprintf($$, "%s.length", $1);
                             free($1);
+                        }
+                        |   PrimaryExpression DOT Identifier LPAREN Expressions RPAREN
+                        {
+                            $$ = malloc((strlen($1) + strlen($3) + strlen($5) + 7)*CHAR_SIZE);
+                            sprintf($$, "%s.%s(%s)", $1, $3, $5);
+                            free($1);
+                            free($3);
+                            free($5);
+                        }
+                        |   Identifier LPAREN Expressions RPAREN
+                        {
+                            $$ = malloc((strlen($1) + strlen($3) + 5)*CHAR_SIZE);
+                            sprintf($$, "%s(%s)", $1, $3);
+                            free($1);
+                            free($3);
                         }
                         |   PrimaryExpression
                         {
@@ -253,7 +324,7 @@ Op                  :   LESS  {$$ = strdup("<");}
                         |   PLUS  {$$ = strdup("+");}
                         |   MINUS  {$$ = strdup("-");}
                         |   MULTIPLY  {$$ = strdup("*");}
-                        |   DIVIDE  {$$ = strdup("/");}
+                        |   DIVIDE  {$$ = strdup("/");};
 
 PrimaryExpression   :   Integer {$$ = $1;}
                         |   TRUE {$$ = strdup("true");}
@@ -262,25 +333,25 @@ PrimaryExpression   :   Integer {$$ = $1;}
                         |   THIS {$$ = strdup("this");}
                         |   NEW INT LSPAREN Expression RSPAREN
                         {
-                            $$ = malloc((strlen($4)+22)*sizeof(char));
+                            $$ = malloc((strlen($4)+22)*CHAR_SIZE);
                             sprintf($$, "new int[%s]", $4);
                             free($4);
                         }
                         |   NEW Identifier LPAREN RPAREN
                         {
-                            $$ = malloc((strlen($2) + 7)*sizeof(char));
+                            $$ = malloc((strlen($2) + 7)*CHAR_SIZE);
                             sprintf($$, "new %s()", $2);
                             free($2);
                         }
                         |   NOT Expression
                         {
-                            $$ = malloc((strlen($2)+2)*sizeof(char));
+                            $$ = malloc((strlen($2)+2)*CHAR_SIZE);
                             sprintf($$, "!%s", $2);
                             free($2);
                         }
                         |   LPAREN Expression RPAREN
                         {
-                            $$ = malloc((strlen($2)+3)*sizeof(char));
+                            $$ = malloc((strlen($2)+3)*CHAR_SIZE);
                             sprintf($$, "(%s)", $2);
                             free($2);
                         };
