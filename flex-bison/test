@@ -1,0 +1,5 @@
+class f{
+public static void main(String[] s){
+System.out.println(new int [5]);
+}}
+

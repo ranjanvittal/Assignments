@@ -1,0 +1,53 @@
+%{
+#include<stdio.h>
+#include "test5.tab.h"
+#include<string.h>
+%}
+
+%%type<sval>
+public {return PUBLIC;}
+static {return STATIC;}
+void {return VOID;}
+main {return MAIN;}
+"(" {return LPAREN;}
+")" {return RPAREN;}
+"{" {return LCPAREN;}
+"}" {return RCPAREN;}
+\[ {return LSPAREN;}
+\] {return RSPAREN;}
+[0-9]+ {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
+     yylval.sval = strdup(yytext);
+     return Integer;
+    }
+System\.out\.println {return SYSTEM;}
+; {return SEMICOLON;}
+extends {return EXTENDS;}
+class {return CLASS;}
+, {return COMMA;}
+return {return RETURN;}
+int {return INT;}
+boolean {return BOOLEAN;}
+= {return EQUALTO;}
+if {return IF;}
+else {return ELSE;}
+while {return WHILE;}
+\< {return LESS;}
+\+ {return PLUS;}
+- {return MINUS;}
+\* {return MULTIPLY;}
+"/" {return DIVIDE;}
+\. {return DOT;}
+\.length {return LENGTH;}
+! {return NOT;}
+new {return NEW;}
+false {return FALSE;}
+true {return TRUE;}
+this {return THIS;}
+#define {return DEFINE;}
+String {return STRING;}
+[a-z]+ {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
+    yylval.sval = strdup(yytext);
+    return Identifier;
+    }
+[ \t\n] ;
+. {return ANY;}
