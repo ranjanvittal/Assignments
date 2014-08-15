@@ -31,6 +31,7 @@ boolean {return BOOLEAN;}
 if {return IF;}
 else {return ELSE;}
 while {return WHILE;}
+"&&" {return AND;}
 \< {return LESS;}
 \+ {return PLUS;}
 - {return MINUS;}
@@ -45,7 +46,7 @@ true {return TRUE;}
 this {return THIS;}
 #define {return DEFINE;}
 String {return STRING;}
-[a-z]+ {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
+[a-zA-Z][a-zA-Z0-9_]* {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
     yylval.sval = strdup(yytext);
     return Identifier;
     }
