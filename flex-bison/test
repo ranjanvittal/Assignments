@@ -1,9 +1,10 @@
 #define a() (10)
-#define a() {a = 10;}
+#define ab(c,d) ((c*d)*(a()))
+#define a() {e = 35;}
 
 class Factorial{
     public static void main(String[] a){
-        System.out.println(new Fac().ComputeFac(NUM()));
+        System.out.println(new Fac().ComputeFac(a()));
     }
 }
 
@@ -11,10 +12,11 @@ class Fac {
     public int ComputeFac(int num, int a){
         int num_aux ;
         if (num < 1)
-            num_aux = ONE() ;
+            num_aux = (ab(2,3))*5;
         else
             num_aux = num * (this.ComputeFac(num-1)) ;
+        c = ab(2+3,3+4);
         return num_aux ;
     }
 }
-}
+

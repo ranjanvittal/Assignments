@@ -5,89 +5,156 @@
 #include<string.h>
 #define CHAR_SIZE sizeof(char)
 #define MAX_DEFINITIONS 100
+#define MAX_LENGTH 500
 #define MAX_ARGUMENTS 100
-int no_of_definitions = 0;
-struct SymbolTable{
+
+int no_of_macro_statements = 0;
+int no_of_macro_expressions = 0;
+
+struct Macro{
     char* key;
-    char** parameters;
-    int no_of_parameters;
     char* value;
-} definitions[MAX_DEFINITIONS];
-
-struct SymbolTable get_definition(char* identifier){
-    int i = 0;
-    for(i = 0; i < no_of_definitions; i++){
-        if(strcmp(definitions[i].key, identifier) == 0)
-            return definitions[i];
-    }
-    printf("error");
-    exit(0);
-}
-
-char* modify_if_present(struct SymbolTable s, char* identifier, char** arguments){
-    char** parameters = s.parameters;
-    int i;
-    for(i = 0; i < s.no_of_parameters; i++){
-        if(strcmp(parameters[i], identifier) == 0){
-            return strdup(arguments[i]);
-        }
-    }
-    return strdup("\0");
-}
+    int number_of_parameters;
+} expressions[MAX_DEFINITIONS], statements[MAX_DEFINITIONS];
 
 int condition_for_identifier(char a){
     return (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z') || (a >= '0' && a <= '9') || (a == '_');
 }
 
-void routine_for_definitions(char* identifier, char* parameters, char* value){
+int condition_for_start(char a){
+    return (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z');
+}
+
+int check_if_macro_present(struct Macro macros[], char* identifier, int number){
+    for(int i = 0; i < number ; i ++)
+        if(strcmp(macros[i].key, identifier) == 0)
+            return 0;
+    return 1;
+}
+
+struct Macro* get_macro(struct Macro macros[], char* identifier, int number){
+    for(int i = 0; i < number ; i ++){
+        if(strcmp(macros[i].key, identifier) == 0)
+            return &macros[i];
+    }
+    printf("syntax error\n");
+    exit(0);
+}
+
+void make_up_value(struct Macro* macro, char** parameters,int number_of_parameters, char* partial_value){
     int i = 0;
-    int k;
-    int l = 0;
+    int j = 0;
+    char value[MAX_LENGTH];
+    char a[MAX_LENGTH];
+    char f[10];
+    strcpy(value, "\0");
+    int length = strlen(partial_value);
+    while(i < length){
+        int k = 0;
+        if(condition_for_start(partial_value[i])){
+            a[k++] = partial_value[i++];
+            while(i < length && condition_for_identifier(partial_value[i])){
+                a[k++] = partial_value[i++];
+            }
+        }
+        a[k] = '\0';
+        j = 0;
+        int flag = 0;
+        if(a[0] != '\0'){
+            while(j < number_of_parameters){
+                char* parameter = parameters[j];
+                if(strcmp(a, parameter) == 0){
+                    sprintf(f, "$%d ", j);
+                    strcat(value, f);
+                    flag = 1;
+                    break;
+                }
+                j++;
+            }
+            if(flag == 0)
+                strcat(value, a);
+        }
+        else{
+            int len = strlen(value);
+            value[len] = partial_value[i];
+            value[len+1] = '\0';
+            i++;
+        }
+    }
+    char* value1 = strdup(value);
+    macro->value = value1;
+}
+
+int make_up_parameters(char** p, char* parameters){
     char a[100];
-    char* p[MAX_ARGUMENTS];
-    while(i<strlen(parameters)){
+    int i=0,k;
+    int l = 0;
+    while(i < strlen(parameters)){
         k = 0;
         while(parameters[i] != '\0' && parameters[i] != ','){
             a[k++] = parameters[i];
             i++;
         }
+        if(parameters[i]==',')i++;
         a[k] = '\0';
         p[l++] = strdup(a);
     }
-    definitions[no_of_definitions].key = identifier;
-    definitions[no_of_definitions].parameters = p;
-    definitions[no_of_definitions].no_of_parameters = l;
-    definitions[no_of_definitions].value = value;
-    no_of_definitions++;
-    free(parameters);
+    return l;
 }
 
-char* get_value_for_key(char* identifier, char** arguments){
-    struct SymbolTable definition = get_definition(identifier);
+void routine_for_macros(struct Macro* macro, char* identifier, char* parameters, char* partial_value){
     int i = 0;
-    int k = 0;
-    char* value = definition.value;
-    char sub_value[100];
-    char a[100];
-    while(i < strlen(value)){
-        k = 0;
-        while(condition_for_identifier(value[i])){
-            a[k++] = value[i++];
-        }
-        a[k] = '\0';
-        if(a[0] != '\0'){
-            char* modified = modify_if_present(definition, a, arguments);
-            if(modified[0] != '\0')
-                strcat(sub_value, modified);
-            else
-                strcat(sub_value, a);
-            free(modified);
+
+    char* p[MAX_ARGUMENTS];
+
+    macro->key = identifier;
+
+    int l = make_up_parameters(p, parameters);
+
+    macro->number_of_parameters = l;
+
+    make_up_value(macro, p, l, partial_value);
+
+    for(i=0; i < l; i++){
+        free(p[i]);
+    }
+    free(parameters);
+    free(partial_value);
+}
+
+char* routine_for_calls(struct Macro* macro, char* arguments){
+    char* final_return;
+    char*p [MAX_ARGUMENTS];
+    int l = make_up_parameters(p, arguments);
+    char* value = macro->value;
+    char sub_value[MAX_LENGTH];
+    sub_value[0] = '\0';
+    int length = strlen(value);
+    int i = 0;
+    if(l != macro->number_of_parameters){
+        return strdup("\0");
+    }
+    while(i < length){
+        if(value[i] == '$'){
+            i++;
+            int k = 0;
+            while('0' <= value[i] && value[i] <= '9'){
+                k = k*10 + value[i++] - '0';
+            }
+            strcat(sub_value, p[k]);
+            i++;
         }
         else
-            strcat(sub_value, &value[i]);
+        {
+            int len = strlen(sub_value);
+            sub_value[len] = value[i++];
+            sub_value[len+1] = '\0';
+        }
     }
+
     return strdup(sub_value);
 }
+
 %}
 %union{
     char* sval;
@@ -282,8 +349,8 @@ Statement           :   LCPAREN Statements RCPAREN
                         }
                         |   Identifier EQUALTO Expression SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 5)*CHAR_SIZE);
-                            sprintf($$, "%s = %s;", $1, $3);
+                            $$ = malloc((strlen($1) + strlen($3) + 7)*CHAR_SIZE);
+                            sprintf($$, "%s = %s;\n", $1, $3);
                             free($1);
                             free($3);
                         }
@@ -318,9 +385,23 @@ Statement           :   LCPAREN Statements RCPAREN
                             free($5);
                         }
                         |   Identifier LPAREN Arguments RPAREN SEMICOLON
-                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 5)*CHAR_SIZE);
-                            sprintf($$, "%s(%s);", $1, $3);
+                        {
+                            char* p = strdup("\0");
+                            $$ = p;
+                            if(!(check_if_macro_present(statements, $1, no_of_macro_statements))){
+                                struct Macro* v = get_macro(statements, $1, no_of_macro_statements);
+                                char* val = routine_for_calls(v, $3);
+                                if(val[0] != '\0'){
+                                    char k[500];
+                                    sprintf(k, "%s\n", val);
+                                    $$ = strdup(k);
+                                    free(val);
+                                }
+                            }
+                            if($$[0] == '\0'){
+                                $$ = malloc((strlen($1) + strlen($3) + 7)*CHAR_SIZE);
+                                sprintf($$, "%s(%s);\n", $1, $3);
+                            }
                             free($1);
                             free($3);
                         };
@@ -368,7 +449,7 @@ CommaExpressions    :   CommaExpression CommaExpressions
 CommaExpression     :   COMMA Expression
                         {
                             $$ = malloc((strlen($2)+3)*CHAR_SIZE);
-                            sprintf($$, ", %s", $2);
+                            sprintf($$, ",%s", $2);
                             free($2);
                         }
 
@@ -408,8 +489,17 @@ Expression          :   PrimaryExpression Op PrimaryExpression
                         }
                         |   Identifier LPAREN Arguments RPAREN
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 5)*CHAR_SIZE);
-                            sprintf($$, "%s(%s)", $1, $3);
+                            char*p = strdup("\0");
+                            $$ = p;
+                            if(!check_if_macro_present(expressions, $1, no_of_macro_expressions)){
+                                struct Macro* v = get_macro(expressions, $1, no_of_macro_expressions);
+                                $$ = routine_for_calls(v, $3);
+                            }
+                            if($$[0] == '\0') {
+                                $$ = malloc((strlen($1) + strlen($3) + 4)*CHAR_SIZE);
+                                sprintf($$, "%s(%s)", $1, $3);
+                            }
+                            free(p);
                             free($1);
                             free($3);
                         }
@@ -464,13 +554,28 @@ MacroDefinition     :   MacroDefExpression {}
 MacroDefStatement   :   DEFINE Identifier LPAREN DefineParameters RPAREN LCPAREN Statements
                         RCPAREN
                         {
-                            routine_for_definitions($2, $4, $7);
+                            if(check_if_macro_present(statements, $2, no_of_macro_statements)){
+                                routine_for_macros(&statements[no_of_macro_statements], $2, $4, $7);
+                                no_of_macro_statements++;
+                            }
+                            else{
+                                printf("syntax error");
+                                exit(0);
+                            }
                         };
 
 MacroDefExpression  :   DEFINE Identifier LPAREN DefineParameters RPAREN LPAREN
                         Expression RPAREN
                         {
-                            routine_for_definitions($2, $4, $7);
+                            if(check_if_macro_present(expressions, $2, no_of_macro_expressions)){
+                                routine_for_macros(&expressions[no_of_macro_expressions], $2, $4, $7);
+                                no_of_macro_expressions++;
+                            }
+                            else{
+                                printf("syntax error\n");
+                                exit(0);
+                            }
+
                         };
 
 DefineParameters    :   Identifier CommaIdentifiers
