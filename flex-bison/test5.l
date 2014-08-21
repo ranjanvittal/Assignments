@@ -31,7 +31,7 @@ boolean {return BOOLEAN;}
 if {return IF;}
 else {return ELSE;}
 while {return WHILE;}
-"&&" {return AND;}
+"&" {return AND;}
 \< {return LESS;}
 \+ {return PLUS;}
 - {return MINUS;}
@@ -52,5 +52,6 @@ String {return STRING;}
     return Identifier;
     }
 [ \t\n] ;
+\/\/.*\n ;
 <<EOF>> return E_O_F;
 . {return ANY;}

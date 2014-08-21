@@ -336,7 +336,7 @@ Statement           :   LCPAREN Statements RCPAREN
                         }
                         |    SYSTEM LPAREN Expression RPAREN SEMICOLON
                         {
-                            $$ = make_string( "System.out.println(%s);", 1, $3);
+                            $$ = make_string( "System.out.println(%s);\n", 1, $3);
                         }
                         |   Identifier EQUALTO Expression SEMICOLON
                         {
@@ -447,7 +447,7 @@ Expression          :   PrimaryExpression Op PrimaryExpression
                             free(p);
                         }
 
-Op                  :   AND  {$$ = strdup("&&");}
+Op                  :   AND  {$$ = strdup("&");}
                         |   LESS  {$$ = strdup("<");}
                         |   PLUS  {$$ = strdup("+");}
                         |   MINUS  {$$ = strdup("-");}
