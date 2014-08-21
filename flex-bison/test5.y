@@ -264,7 +264,7 @@ Program             :   MacroDefinitions MainClass TypeDeclarations
 MainClass           :   CLASS Identifier LCPAREN PUBLIC STATIC VOID
                         MAIN LPAREN STRING LSPAREN RSPAREN Identifier RPAREN LCPAREN SYSTEM LPAREN Expression RPAREN SEMICOLON RCPAREN RCPAREN
                         {
-                            $$ = make_string("class %s {\npublic static void main(String[] %s) {\n System.out.println(%s);\n}}", 1, $2, $12, $17);
+                            $$ = make_string("class %s {\npublic static void main(String[] %s) {\n System.out.println(%s);\n}}", 3, $2, $12, $17);
                         };
 
 TypeDeclarations :   TypeDeclarations TypeDeclaration
