@@ -14,6 +14,7 @@ class Fac {
         int num_aux ;
         int a;
         a f;
+        a=5;
         if(num_aux<3)
         if(num&&6)
         a=2;
@@ -24,6 +25,7 @@ class Fac {
         a[f] = 4;
         f = a.h();
         a = 5;
+        PI = PI();
         return num_aux ;
     }
 }

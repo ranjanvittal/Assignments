@@ -15,6 +15,9 @@ int no_of_macro_expressions = 0;
 char* make_string(char* format_string, int num, ...)
 {
     va_list arguments;
+    int num1;char *s=format_string;
+    for(num1=0;s[num1];s[num1]=='%'?num1++:*s++);
+    num = num1;
     va_start(arguments, num);
     int length = strlen(format_string) + 1;
     int i;
@@ -28,6 +31,7 @@ char* make_string(char* format_string, int num, ...)
     va_start(arguments, num);
     for(i = 0;i < num; i++)
         free(va_arg(arguments, char*));
+    va_end(arguments);
     return k;
 }
 
@@ -250,25 +254,22 @@ char* routine_for_calls(struct Macro* macro, char* arguments){
 %start goal
 
 %%
-goal                :   Program {printf("%s", $1);exit(0);};
+goal                :   Program {printf("%s\n", $1);exit(0);};
 
 Program             :   MacroDefinitions MainClass TypeDeclarations
                         {
-                            char* format_string = "%s\n%s";
-                            $$ = make_string(format_string, 2, $2, $3);
-                        }
+                            $$ = make_string("%s\n%s", 2, $2, $3);
+                        };
 
 MainClass           :   CLASS Identifier LCPAREN PUBLIC STATIC VOID
                         MAIN LPAREN STRING LSPAREN RSPAREN Identifier RPAREN LCPAREN SYSTEM LPAREN Expression RPAREN SEMICOLON RCPAREN RCPAREN
                         {
-                            char* format_string = "class %s {\npublic static void main(String[] %s) {\n System.out.println(%s);\n}}";
-                            $$ = make_string(format_string, 3, $2, $12, $17);
+                            $$ = make_string("class %s {\npublic static void main(String[] %s) {\n System.out.println(%s);\n}}", 1, $2, $12, $17);
                         };
 
 TypeDeclarations :   TypeDeclarations TypeDeclaration
                         {
-                            char* format_string = "%s\n%s";
-                            $$ = make_string(format_string, 2, $1, $2);
+                            $$ = make_string("%s\n%s", 2, $1, $2);
                         }
                         |
                         {
@@ -279,45 +280,31 @@ TypeDeclaration     :   CLASS Identifier EXTENDS Identifier LCPAREN
                         Declarations MethodDeclarations
                         RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($4) + strlen($6) + strlen($7) + 20)*CHAR_SIZE);
-                            sprintf($$, "class %s extends %s{\n%s%s}", $2, $4, $6, $7);
-                            free($2);
-                            free($4);
-                            free($6);
-                            free($7);
+                            $$ = make_string("class %s extends %s{\n%s%s}", 4, $2, $4, $6, $7);
                         }
                         |
                         CLASS Identifier LCPAREN Declarations
                         MethodDeclarations
                         RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($4) + strlen($5) + 10)*CHAR_SIZE);
-                            sprintf($$, "class %s{\n%s%s}", $2, $4, $5);
+                            $$ = make_string("class %s{\n%s%s}", 3, $2, $4, $5);
                         };
 
 Declarations     :   Declarations Declaration
                     {
-                        $$ = malloc((strlen($1) + strlen($2) + 2)*CHAR_SIZE);
-                        sprintf($$, "%s\n%s", $1, $2);
-                        free($1);
-                        free($2);
+                        $$ = make_string("%s\n%s", 2, $1, $2);
                     }
                     |   {$$ = strdup("\0");};
 
 Declaration         :   Type Identifier SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 3)*CHAR_SIZE);
-                            sprintf($$, "%s %s;", $1, $2);
-                            free($1);
-                            free($2);
+                            $$ = make_string("%s %s;", 2, $1, $2);
                         };
 
 MethodDeclarations  :   MethodDeclarations MethodDeclaration
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 2)*CHAR_SIZE);
-                            sprintf($$, "%s\n%s", $1, $2);
-                            free($1);
-                            free($2);
+                            $$ = make_string("%s\n%s", 2, $1, $2);
+
                         }
                         |   {$$ = strdup("\0");};
 
@@ -325,22 +312,12 @@ MethodDeclaration   :   PUBLIC Type Identifier LPAREN Parameters RPAREN LCPAREN
                         Declarations  Statements RETURN
                         Expression SEMICOLON RCPAREN
                         {
-                            $$ = malloc((strlen($2) + strlen($3) + strlen($5) + strlen($8) + strlen($9)  + strlen($11) + 28)*CHAR_SIZE);
-                            sprintf($$, "public %s %s(%s){\n%s\n%s\nreturn %s;\n}", $2, $3, $5, $8, $9, $11);
-                            free($2);
-                            free($3);
-                            free($5);
-                            free($8);
-                            free($9);
-                            free($11);
+                            $$ = make_string( "public %s %s(%s){\n%s\n%s\nreturn %s;\n}", 6, $2, $3, $5, $8, $9, $11);
                         };
 
 Parameters          :   Type Identifier CommaParameters
                         {
-                            $$ = malloc((strlen($1) + strlen($2) +strlen($3) + 3)*CHAR_SIZE);
-                            sprintf($$, "%s %s%s", $1, $2, $3);
-                            free($1);
-                            free($2);
+                            $$ = make_string( "%s %s%s", 3, $1, $2, $3);
                         }
                         |
                         {
@@ -349,62 +326,37 @@ Parameters          :   Type Identifier CommaParameters
 
 CommaParameters     :   COMMA Type Identifier CommaParameters
                         {
-                            $$ = malloc((strlen($2) + strlen($3) + strlen($4) + 3)*CHAR_SIZE);
-                            sprintf($$, ", %s %s%s", $2, $3, $4);
-                            free($2);
-                            free($3);
-                            free($4);
+                            $$ = make_string( ", %s %s%s", 3, $2, $3, $4);
                         }
-                        |   {$$ = strdup("\0");}
+                        |   {$$ = strdup("\0");};
 
 Statement           :   LCPAREN Statements RCPAREN
                         {
-                            $$ = malloc((strlen($2) + 3)*CHAR_SIZE);
-                            sprintf($$, "{%s}", $2);
-                            free($2);
+                            $$ = make_string( "{%s}", 1, $2);
                         }
                         |    SYSTEM LPAREN Expression RPAREN SEMICOLON
                         {
-                            $$ = malloc((strlen($3) + 24)*CHAR_SIZE);
-                            sprintf($$, "System.out.println(%s);", $3);
-                            free($3);
+                            $$ = make_string( "System.out.println(%s);", 1, $3);
                         }
                         |   Identifier EQUALTO Expression SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 7)*CHAR_SIZE);
-                            sprintf($$, "%s = %s;\n", $1, $3);
-                            free($1);
-                            free($3);
+                            $$ = make_string( "%s = %s;\n", 2, $1, $3);
                         }
                         |   Identifier LSPAREN Expression RSPAREN EQUALTO Expression SEMICOLON
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + strlen($6) + 10)*CHAR_SIZE);
-                            sprintf($$, "%s[%s] = %s;\n", $1, $3, $6);
-                            free($1);
-                            free($3);
-                            free($6);
+                            $$ = make_string( "%s[%s] = %s;\n", 3, $1, $3, $6);
                         }
                         |   IF LPAREN Expression RPAREN Statement ELSE Statement
                         {
-                            $$ = malloc((strlen($3) + strlen($5) + strlen($7) + 15)*CHAR_SIZE);
-                            sprintf($$, "if(%s)\n%s\nelse\n%s\n", $3, $5, $7);
-                            free($3);
-                            free($5);
-                            free($7);
+                            $$ = make_string( "if(%s)\n%s\nelse\n%s\n", 3, $3, $5, $7);
                         }
                         |   IF LPAREN Expression RPAREN Statement
                         {
-                            $$ = malloc((strlen($3) + strlen($5) + 8)*CHAR_SIZE);
-                            sprintf($$, "if(%s)\n%s", $3, $5);
-                            free($3);
-                            free($5);
+                            $$ = make_string( "if(%s)\n%s", 2, $3, $5);
                         }
                         |   WHILE LPAREN Expression RPAREN Statement
                         {
-                            $$ = malloc((strlen($3) + strlen($5) + 10)*CHAR_SIZE);
-                            sprintf($$, "while(%s)\n%s", $3, $5);
-                            free($3);
-                            free($5);
+                            $$ = make_string( "while(%s)\n%s", 2, $3, $5);
                         }
                         |   Identifier LPAREN Arguments RPAREN SEMICOLON
                         {
@@ -413,27 +365,19 @@ Statement           :   LCPAREN Statements RCPAREN
                             if(!(check_if_macro_present(statements, $1, no_of_macro_statements))){
                                 struct Macro* v = get_macro(statements, $1, no_of_macro_statements);
                                 char* val = routine_for_calls(v, $3);
-                                if(val[0] != '\0'){
-                                    char k[500];
-                                    sprintf(k, "%s\n", val);
-                                    $$ = strdup(k);
-                                    free(val);
-                                }
+                                if(val[0] != '\0')
+                                    $$ = make_string("%s\n", 1, val);
                             }
                             if($$[0] == '\0'){
-                                $$ = malloc((strlen($1) + strlen($3) + 7)*CHAR_SIZE);
-                                sprintf($$, "%s(%s);\n", $1, $3);
+
+                                $$ = make_string( "%s(%s);\n", 2, $1, $3);
                             }
-                            free($1);
-                            free($3);
+                            free(p);
                         };
 
 Statements          :   Statement Statements
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 1)*CHAR_SIZE);
-                            sprintf($$, "%s%s", $1, $2);
-                            free($1);
-                            free($2);
+                            $$ = make_string( "%s%s", 2, $1, $2);
                         }
                         |
                         {
@@ -442,10 +386,7 @@ Statements          :   Statement Statements
 
 Arguments          :   Expression CommaExpressions
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 3)*CHAR_SIZE);
-                            sprintf($$, "%s%s", $1, $2);
-                            free($1);
-                            free($2);
+                            $$ = make_string( "%s%s", 2, $1, $2);
                         }
                         |
                         {
@@ -454,10 +395,7 @@ Arguments          :   Expression CommaExpressions
 
 CommaExpressions    :   CommaExpressions CommaExpression
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 1)*CHAR_SIZE);
-                            sprintf($$, "%s%s", $1, $2);
-                            free($1);
-                            free($2);
+                            $$ = make_string( "%s%s", 2, $1, $2);
                         }
                         |
                         {
@@ -466,9 +404,7 @@ CommaExpressions    :   CommaExpressions CommaExpression
 
 CommaExpression     :   COMMA Expression
                         {
-                            $$ = malloc((strlen($2)+3)*CHAR_SIZE);
-                            sprintf($$, ",%s", $2);
-                            free($2);
+                            $$ = make_string( ",%s", 1, $2);
                         };
 
 Type                :   INT LSPAREN RSPAREN  {$$ = strdup("int[]");}
@@ -478,32 +414,19 @@ Type                :   INT LSPAREN RSPAREN  {$$ = strdup("int[]");}
 
 Expression          :   PrimaryExpression Op PrimaryExpression
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + strlen($3) + 2)*CHAR_SIZE);
-                            sprintf($$, "%s%s%s", $1, $2, $3);
-                            free($1);
-                            free($2);
-                            free($3);
+                            $$ = make_string( "%s%s%s", 3, $1, $2, $3);
                         }
                         |   PrimaryExpression LSPAREN PrimaryExpression RSPAREN
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + 6)*CHAR_SIZE);
-                            sprintf($$, "%s[%s]", $1, $3);
-                            free($1);
-                            free($3);
+                            $$ = make_string( "%s[%s]", 2, $1, $3);
                         }
                         |   PrimaryExpression LENGTH
                         {
-                            $$ = malloc((strlen($1) + 8)*CHAR_SIZE);
-                            sprintf($$, "%s.length", $1);
-                            free($1);
+                            $$ = make_string( "%s.length", 1, $1);
                         }
                         |   PrimaryExpression DOT Identifier LPAREN Arguments RPAREN
                         {
-                            $$ = malloc((strlen($1) + strlen($3) + strlen($5) + 7)*CHAR_SIZE);
-                            sprintf($$, "%s.%s(%s)", $1, $3, $5);
-                            free($1);
-                            free($3);
-                            free($5);
+                            $$ = make_string( "%s.%s(%s)", 3, $1, $3, $5);
                         }
                         |   PrimaryExpression
                         {
@@ -518,12 +441,10 @@ Expression          :   PrimaryExpression Op PrimaryExpression
                                 $$ = routine_for_calls(v, $3);
                             }
                             if($$[0] == '\0') {
-                                $$ = malloc((strlen($1) + strlen($3) + 4)*CHAR_SIZE);
-                                sprintf($$, "%s(%s)", $1, $3);
+
+                                $$ = make_string( "%s(%s)", 2, $1, $3);
                             }
                             free(p);
-                            free($1);
-                            free($3);
                         }
 
 Op                  :   AND  {$$ = strdup("&&");}
@@ -540,27 +461,19 @@ PrimaryExpression   :   Integer {$$ = $1;}
                         |   THIS {$$ = strdup("this");}
                         |   NEW INT LSPAREN Expression RSPAREN
                         {
-                            $$ = malloc((strlen($4)+22)*CHAR_SIZE);
-                            sprintf($$, "new int[%s]", $4);
-                            free($4);
+                            $$ = make_string( "new int[%s]", 1, $4);
                         }
                         |   NEW Identifier LPAREN RPAREN
                         {
-                            $$ = malloc((strlen($2) + 7)*CHAR_SIZE);
-                            sprintf($$, "new %s()", $2);
-                            free($2);
+                            $$ = make_string( "new %s()", 1, $2);
                         }
                         |   NOT Expression
                         {
-                            $$ = malloc((strlen($2)+2)*CHAR_SIZE);
-                            sprintf($$, "!%s", $2);
-                            free($2);
+                            $$ = make_string( "!%s", 1, $2);
                         }
                         |   LPAREN Expression RPAREN
                         {
-                            $$ = malloc((strlen($2)+3)*CHAR_SIZE);
-                            sprintf($$, "(%s)", $2);
-                            free($2);
+                            $$ = make_string( "(%s)", 1, $2);
                         };
 
 MacroDefinitions    :   MacroDefinition MacroDefinitions {}
@@ -598,20 +511,14 @@ MacroDefExpression  :   DEFINE Identifier LPAREN DefineParameters RPAREN LPAREN
 
 DefineParameters    :   Identifier CommaIdentifiers
                         {
-                            $$ = malloc((strlen($1) + strlen($2) + 3)*CHAR_SIZE);
-                            sprintf($$, "%s%s", $1, $2);
-                            free($1);
-                            free($2);
+                            $$ = make_string( "%s%s", 2, $1, $2);
                         }
                         |
                         {$$ = strdup("\0");};
 
 CommaIdentifiers    :   COMMA Identifier CommaIdentifiers
                         {
-                            $$ = malloc((strlen($2) + strlen($3) + 4)*CHAR_SIZE);
-                            sprintf($$, ",%s%s", $2, $3);
-                            free($2);
-                            free($3);
+                            $$ = make_string( ",%s%s", 2, $2, $3);
                         }
                         |
                         {$$ = strdup("\0");};
