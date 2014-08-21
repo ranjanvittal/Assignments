@@ -1,6 +1,7 @@
-#define a() (10)
 #define ab(c,d) ((c*d)*(a()))
-#define a() {e = 35;}
+#define a() (10)
+#define PI() (6)
+#define c(b) {b=3;}
 
 class Factorial{
     public static void main(String[] a){
@@ -11,12 +12,20 @@ class Factorial{
 class Fac {
     public int ComputeFac(int num, int a){
         int num_aux ;
-        if (num < 1)
-            num_aux = (ab(2,3))*5;
+        int a;
+        a f;
+        if(num_aux<3)
+        if(num&&6)
+        a=2;
         else
-            num_aux = num * (this.ComputeFac(num-1)) ;
-        c = ab(2+3,3+4);
+        r=4;
+        else
+        r=4;
+        a[f] = 4;
+        f = a.h();
+        a = 5;
         return num_aux ;
     }
 }
+
 

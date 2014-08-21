@@ -15,7 +15,7 @@ main {return MAIN;}
 "}" {return RCPAREN;}
 \[ {return LSPAREN;}
 \] {return RSPAREN;}
-[0-9]+ {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
+[1-9][0-9]*|0 {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
      yylval.sval = strdup(yytext);
      return Integer;
     }
@@ -48,7 +48,9 @@ this {return THIS;}
 String {return STRING;}
 [a-zA-Z][a-zA-Z0-9_]* {yylval.sval = malloc((strlen(yytext)+1)*sizeof(char));
     yylval.sval = strdup(yytext);
+    //printf("%s\n", yylval.sval);
     return Identifier;
     }
 [ \t\n] ;
+<<EOF>> return E_O_F;
 . {return ANY;}
