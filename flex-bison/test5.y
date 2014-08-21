@@ -254,7 +254,7 @@ char* routine_for_calls(struct Macro* macro, char* arguments){
 %start goal
 
 %%
-goal                :   Program {printf("%s\n", $1);exit(0);};
+goal                :   Program E_O_F {printf("%s\n", $1);exit(0);};
 
 Program             :   MacroDefinitions MainClass TypeDeclarations
                         {
