@@ -15,9 +15,6 @@ int no_of_macro_expressions = 0;
 char* make_string(char* format_string, int num, ...)
 {
     va_list arguments;
-    int num1;char *s=format_string;
-    for(num1=0;s[num1];s[num1]=='%'?num1++:*s++);
-    num = num1;
     va_start(arguments, num);
     int length = strlen(format_string) + 1;
     int i;
