@@ -1,0 +1,135 @@
+   public R visit(PrimaryExpression n) {
+      R _ret=null;
+      String pval = (String) n.f0.accept(this);
+       if(!Types.contains(pval)){
+           if(variableSymbolTable.containsKey(pval)){
+               return (R) variableSymbolTable.get(pval);
+           }
+           else{
+               System.out.println("error");
+               System.exit(1);
+               return _ret;
+           }
+       }
+       return (R) pval;
+   }
+
+   /**
+    * f0 -> <INTEGER_LITERAL>
+    */
+   public R visit(IntegerLiteral n) {
+      R _ret=null;
+      n.f0.accept(this);
+      return (R) "int";
+   }
+
+   /**
+    * f0 -> "true"
+    */
+   public R visit(TrueLiteral n) {
+      R _ret=null;
+      n.f0.accept(this);
+      return (R) "boolean";
+   }
+
+   /**
+    * f0 -> "false"
+    */
+   public R visit(FalseLiteral n) {
+      R _ret=null;
+      n.f0.accept(this);
+      return (R) "boolean";
+   }
+
+   /**
+    * f0 -> <IDENTIFIER>
+    */
+   public R visit(Identifier n) {
+      R _ret=null;
+      n.f0.accept(this);
+       return (R) n.f0.toString();
+
+   }
+
+   /**
+    * f0 -> "this"
+    */
+   public R visit(ThisExpression n) {
+      R _ret=null;
+      n.f0.accept(this);
+      return (R) "this";
+   }
+
+   /**
+    * f0 -> "new"
+    * f1 -> "int"
+    * f2 -> "["
+    * f3 -> Expression()
+    * f4 -> "]"
+    */
+   public R visit(ArrayAllocationExpression n) {
+      R _ret=null;
+      n.f0.accept(this);
+      n.f1.accept(this);
+      n.f2.accept(this);
+      String exp = (String) n.f3.accept(this);
+       if(exp.equals("int")){
+           n.f4.accept(this);
+           return (R) "int[]";
+       }
+       System.out.println("error");
+       System.exit(1);
+       return _ret;
+   }
+
+   /**
+    * f0 -> "new"
+    * f1 -> Identifier()
+    * f2 -> "("
+    * f3 -> ")"
+    */
+   public R visit(AllocationExpression n) {
+      R _ret=null;
+      n.f0.accept(this);
+      String type = (String) n.f1.accept(this);
+       type = type + "$";
+       if(Types.contains(type)){
+           n.f2.accept(this);
+           n.f3.accept(this);
+           return (R) type;
+       }
+       System.out.println("error");
+       System.exit(1);
+       return _ret;
+   }
+
+   /**
+    * f0 -> "!"
+    * f1 -> Expression()
+    */
+   public R visit(NotExpression n) {
+      R _ret=null;
+      n.f0.accept(this);
+      String exp = (String) n.f1.accept(this);
+       if(exp.equals("boolean")){
+           return (R) "boolean";
+       }
+       System.out.println("error");
+       System.exit(1);
+       return _ret;
+   }
+
+   /**
+    * f0 -> "("
+    * f1 -> Expression()
+    * f2 -> ")"
+    */
+   public R visit(BracketExpression n) {
+      R _ret=null;
+      n.f0.accept(this);
+      _ret = n.f1.accept(this);
+      n.f2.accept(this);
+      return _ret;
+   }
+
+}
