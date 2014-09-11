@@ -17,8 +17,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
     //Hashtable<String, String> variableSymbolTable = new Hashtable<String, String>();
-    void cryError() {
-        System.out.println("error");
+    void cryError(String message) {
+        System.out.println("Type error");
         System.exit(1);
     }
 
@@ -31,6 +31,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
               this.name = name;
               this.type = type;
           }
+          public void pretty(){
+              System.out.println(name + " : " + type);
+          }
         }
 
     class Signature extends Object{
@@ -42,7 +45,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
             while(vEnum.hasMoreElements()){
                 Argument argument = (Argument) vEnum.nextElement();
                 if(symbolTable.contains(argument.name))
-                    cryError();
+                    cryError("append Error");
                 else
                   symbolTable.variableSymbolTable.put(argument.name, argument.type);
             }
@@ -289,8 +292,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f4.accept(this);
       global.put(currentClass, currentSymbolTable);
       n.f5.accept(this);
-      System.out.println(currentClass);
-      currentSymbolTable.pretty();
+      //System.out.println(currentClass);
+      //currentSymbolTable.pretty();
       return _ret;
    }
 
@@ -312,7 +315,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       SymbolTable currentSymbolTable = new SymbolTable();
       String parent = (String) n.f3.accept(this);
       if(!global.containsKey(parent))
-          cryError();
+          cryError("No Parent Found");
       currentHashIdentifiers = new Hashtable<String, String>();
       currentHashMethods = new Hashtable<String, Signature>();
       currentSymbolTable.variableSymbolTable = currentHashIdentifiers;
@@ -323,8 +326,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f6.accept(this);
       n.f7.accept(this);
       global.put(currentClass, currentSymbolTable);
-      System.out.println(currentClass);
-      currentSymbolTable.pretty();
+      //System.out.println(currentClass);
+      //currentSymbolTable.pretty();
       return _ret;
    }
 
@@ -341,7 +344,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       if(!currentHashIdentifiers.containsKey(name))
           currentHashIdentifiers.put(name, type);
       else
-          cryError();
+          cryError("Redeclaration of Variable");
       return _ret;
    }
 
@@ -367,7 +370,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       String returnType = (String) n.f1.accept(this);
       String methodName = (String) n.f2.accept(this);
       if(currentHashMethods.containsKey(methodName))
-          cryError();
+          cryError("overloading");
       n.f3.accept(this);
       currentArguments = new Vector<Argument>();
       n.f4.accept(this);
@@ -391,7 +394,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       R existingMethod = currentSymbolTable.getSignature(methodName);
       if(existingMethod != null) {
           if(!compare((Signature) existingMethod, methodSign))
-              cryError();
+              cryError("improper overriding");
       }
       methodSign.appendArguments();
       currentHashMethods.put(methodName, methodSign);
@@ -420,7 +423,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       if(!contains(currentArguments, name))
           currentArguments.add(new Argument(name, type));
       else
-          cryError();
+          cryError("repetition in arguments");
       return _ret;
    }
 
