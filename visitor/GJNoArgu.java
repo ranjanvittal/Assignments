@@ -76,6 +76,7 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
+      System.out.println("Type Checked Successfully");
       return _ret;
    }
 
@@ -616,21 +617,21 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     *       | BracketExpression()
     */
 public R visit(PrimaryExpression n) {
-      R _ret=null;
       R pval2 = (R) n.f0.accept(this);
-      if(pval2 instanceof Argument) {
-          Argument pval1 = (Argument) pval2;
-          return pval1.type;
+      if(pval2 instanceof String) {
+        String pval = (String) pval2;
+        if(pval.equals("int") || pval.equals("boolean") || pval.equals("int[]"))
+           return (R) pval;
+        if(pval.equals("this"))
+            return (R) currentClass;
+        R _ret = currentSymbolTable.getVariable(pval);
+        if(_ret == null)
+            cryError();
+        else
+            return _ret;
       }
-      String pval = (String) pval2;
-      if(pval.equals("int") || pval.equals("boolean") || pval.equals("int[]"))
-         return (R) pval;
-      if(pval.equals("this"))
-          return (R) currentClass;
-      _ret = currentSymbolTable.getVariable(pval);
-      if(_ret == null)
-          cryError();
-      return _ret;
+      Argument pval1 = (Argument) pval2;
+      return (R) pval1.type;
    }
 
    /**
@@ -710,13 +711,10 @@ public R visit(PrimaryExpression n) {
       R _ret=null;
       n.f0.accept(this);
       String type = (String) n.f1.accept(this);
-       type = type;
-       if(global.containsKey(type)){
+      if(global.containsKey(type)){
            n.f2.accept(this);
            n.f3.accept(this);
-           Argument argument = new Argument();
-           argument.name = "main";
-           argument.type = type;
+           Argument argument = new Argument("main", type);
            return (R) argument;
        }
        cryError();
@@ -748,7 +746,13 @@ public R visit(PrimaryExpression n) {
       n.f0.accept(this);
       _ret = n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      String type = (String) _ret;
+      if((type.equals("boolean") || type.equals("int") || type.equals("int[]") ) )
+          return _ret;
+      else {
+          Argument argument = new Argument("main", type);
+          return (R) argument;
+      }
    }
 
 }
