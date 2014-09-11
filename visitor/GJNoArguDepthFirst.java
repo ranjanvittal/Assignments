@@ -24,10 +24,29 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
 
     Hashtable<String, SymbolTable> global = new Hashtable<String, SymbolTable>();
 
+    class Argument extends Object {
+          String name;
+          String type;
+          Argument(String name, String type){
+              this.name = name;
+              this.type = type;
+          }
+        }
+
     class Signature extends Object{
         Vector<Argument> arguments;
         SymbolTable symbolTable;
         String returnType;
+        public void appendArguments(){
+            Enumeration vEnum = arguments.elements();
+            while(vEnum.hasMoreElements()){
+                Argument argument = (Argument) vEnum.nextElement();
+                if(symbolTable.contains(argument.name))
+                    cryError();
+                else
+                  symbolTable.variableSymbolTable.put(argument.name, argument.type);
+            }
+        }
         public void pretty(){
             int i = 0;
             System.out.println("Method arguments :");
@@ -43,14 +62,6 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
         }
     }
 
-    class Argument extends Object {
-      String name;
-      String type;
-      Argument(String name, String type){
-          this.name = name;
-          this.type = type;
-      }
-    }
     boolean contains(Vector<Argument> arguments, String name){
         Enumeration vEnum = arguments.elements();
         while(vEnum.hasMoreElements()){
@@ -66,13 +77,14 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
         Hashtable<String, String> variableSymbolTable;
         Hashtable<String, Signature> methodSymbolTable;
         String parent;
-        public String getVariable(String key){
+        SymbolTable(){
+            parent = "main";
+        }
+        public R getVariable(String key){
             if(variableSymbolTable.containsKey(key))
-                return variableSymbolTable.get(key);
+                return (R) variableSymbolTable.get(key);
             else if(!parent.equals("main"))
                 return global.get(parent).getVariable(key);
-            System.out.println("error");
-            System.exit(1);
             return null;
         }
 
@@ -81,10 +93,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
                 return (R) methodSymbolTable.get(key);
             else if(!parent.equals("main"))
                 return global.get(parent).getSignature(key);
-            System.out.println("Here");
             return null;
         }
-
+        public boolean contains(String key){
+            return variableSymbolTable.containsKey(key);
+        }
         public void pretty(){
             Set entrySet = variableSymbolTable.entrySet();
             Iterator it = entrySet.iterator();
@@ -380,6 +393,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
           if(!compare((Signature) existingMethod, methodSign))
               cryError();
       }
+      methodSign.appendArguments();
       currentHashMethods.put(methodName, methodSign);
       return _ret;
    }

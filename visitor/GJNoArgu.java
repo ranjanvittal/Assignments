@@ -6,6 +6,15 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
 
    //
    SymbolTable symbolTable;
+   boolean typeEquals(String a, String b) {
+       if(a.equals(b))
+           return true;
+
+       String parent = global.get(b).parent;
+       if(!parent.equals("main"))
+           return typeEquals(a, parent);
+       return false;
+   }
    public GJNoArgu(Object global){
       this.global = (Hashtable<String, SymbolTable>) global;
    }
@@ -132,7 +141,8 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
    public R visit(ClassDeclaration n) {
       R _ret=null;
       n.f0.accept(this);
-      n.f1.accept(this);
+      currentClass = (String) n.f1.accept(this);
+      currentSymbolTable = global.get(currentClass);
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
@@ -153,7 +163,8 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
    public R visit(ClassExtendsDeclaration n) {
       R _ret=null;
       n.f0.accept(this);
-      n.f1.accept(this);
+      currentClass = (String) n.f1.accept(this);
+      currentSymbolTable = global.get(currentClass);
       n.f2.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
@@ -193,8 +204,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
    public R visit(MethodDeclaration n) {
       R _ret=null;
       n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
+      String methodType = (String) n.f1.accept(this);
+      if(!global.containsKey(methodType))
+          cryError();
+      String methodName = (String) n.f2.accept(this);
+      Signature k = (Signature) currentSymbolTable.getSignature(methodName);
+      currentSymbolTable = k.symbolTable;
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
@@ -202,9 +217,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       n.f7.accept(this);
       n.f8.accept(this);
       n.f9.accept(this);
-      n.f10.accept(this);
+      String expType = (String) n.f10.accept(this);
+      if(!typeEquals(methodType, expType))
+          cryError();
       n.f11.accept(this);
       n.f12.accept(this);
+      currentSymbolTable = global.get(currentClass);
       return _ret;
    }
 
@@ -250,11 +268,8 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
    public R visit(Type n) {
       R _ret=null;
       String type = (String) n.f0.accept(this);
-      if(type.isEquals("int") )
-      if(!global.containsKey(type)){
-          System.out.println("error");
-          System.exit(1);
-      }
+      if(!global.containsKey(type))
+          cryError();
       return (R) type;
    }
 
@@ -327,9 +342,17 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(AssignmentStatement n) {
       R _ret=null;
-      n.f0.accept(this);
+      String name = (String) n.f0.accept(this);
+      String type = "main";
+      R type1 = currentSymbolTable.getVariable(name);
+      if(type1 != null)
+          type = (String) type1;
+      else
+          cryError();
       n.f1.accept(this);
-      n.f2.accept(this);
+      String expType = (String) n.f2.accept(this);
+      if(!typeEquals(type, expType))
+          cryError();
       n.f3.accept(this);
       return _ret;
    }
@@ -345,12 +368,24 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(ArrayAssignmentStatement n) {
       R _ret=null;
-      n.f0.accept(this);
+      String name = (String) n.f0.accept(this);
+      String type = "main";
+      R type1 = currentSymbolTable.getVariable(name);
+      if(type1 != null)
+          type = (String) type1;
+      else
+          cryError();
+      if(!type.equals("int[]"))
+          cryError();
       n.f1.accept(this);
-      n.f2.accept(this);
+      type = (String) n.f2.accept(this);
+      if(!type.equals("int"))
+          cryError();
       n.f3.accept(this);
       n.f4.accept(this);
-      n.f5.accept(this);
+      type = (String) n.f5.accept(this);
+      if(!type.equals("int"))
+          cryError();
       n.f6.accept(this);
       return _ret;
    }
@@ -368,7 +403,9 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+      String type = (String) n.f2.accept(this);
+      if(!type.equals("boolean"))
+          cryError();
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
@@ -387,7 +424,9 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       R _ret=null;
       n.f0.accept(this);
       n.f1.accept(this);
-      n.f2.accept(this);
+      String type = (String) n.f2.accept(this);
+      if(!type.equals("boolean"))
+          cryError();
       n.f3.accept(this);
       n.f4.accept(this);
       return _ret;
@@ -423,7 +462,7 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(Expression n) {
       R _ret=null;
-      n.f0.accept(this);
+      _ret = n.f0.accept(this);
       return _ret;
    }
 
@@ -433,11 +472,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(AndExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+       String type1 = (String) n.f0.accept(this);
+       n.f1.accept(this);
+       String type2 = (String) n.f2.accept(this);
+       if(!(type1.equals("boolean") && type2.equals("boolean")))
+          cryError();
+       return (R) "boolean";
    }
 
    /**
@@ -446,12 +486,13 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(CompareExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
-    }
+       String type1 = (String) n.f0.accept(this);
+       n.f1.accept(this);
+       String type2 = (String) n.f2.accept(this);
+       if(!(type1.equals("int") && type2.equals("int")))
+          cryError();
+       return (R) "boolean";
+   }
 
    /**
     * f0 -> PrimaryExpression()
@@ -459,11 +500,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(PlusExpression n) {
-       R _ret=null;
-       n.f0.accept(this);
+       String type1 = (String) n.f0.accept(this);
        n.f1.accept(this);
-       n.f2.accept(this);
-       return _ret;
+       String type2 = (String) n.f2.accept(this);
+       if(!(type1.equals("int") && type2.equals("int")))
+          cryError();
+       return (R) "int";
    }
 
    /**
@@ -472,11 +514,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(MinusExpression n) {
-       R _ret=null;
-       n.f0.accept(this);
+       String type1 = (String) n.f0.accept(this);
        n.f1.accept(this);
-       n.f2.accept(this);
-       return _ret;
+       String type2 = (String) n.f2.accept(this);
+       if(!(type1.equals("int") && type2.equals("int")))
+          cryError();
+       return (R) "int";
    }
 
    /**
@@ -485,11 +528,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     * f2 -> PrimaryExpression()
     */
    public R visit(TimesExpression n) {
-      R _ret=null;
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      return _ret;
+       String type1 = (String) n.f0.accept(this);
+       n.f1.accept(this);
+       String type2 = (String) n.f2.accept(this);
+       if(!(type1.equals("int") && type2.equals("int")))
+          cryError();
+       return (R) "int";
    }
    /**
     * f0 -> PrimaryExpression()
@@ -498,25 +542,25 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     * f3 -> "]"
     */
    public R visit(ArrayLookup n) {
-      R _ret=null;
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      n.f3.accept(this);
-      return _ret;
+       String type1 = (String) n.f0.accept(this);
+       n.f1.accept(this);
+       String type2 = (String) n.f2.accept(this);
+       if(!(type1.equals("int[]") && type2.equals("int")))
+          cryError();
+       return (R) "int";
    }
-
    /**
     * f0 -> PrimaryExpression()
     * f1 -> "."
     * f2 -> "length"
     */
    public R visit(ArrayLength n) {
-      R _ret=null;
-      n.f0.accept(this);
+      String type1 = (String) n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      return _ret;
+      if(!type1.equals("int[]"))
+          cryError();
+      return (R) "int";
    }
 
    /**
@@ -535,7 +579,7 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
-      return _ret;
+      return (R) "int";
    }
 
    /**
@@ -573,18 +617,20 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     */
 public R visit(PrimaryExpression n) {
       R _ret=null;
-      String pval = (String) n.f0.accept(this);
-       if(!global.containsKey(pval)){
-           if(variableSymbolTable.containsKey(pval)){
-               return (R) variableSymbolTable.get(pval);
-           }
-           else{
-               System.out.println("error");
-               System.exit(1);
-               return _ret;
-           }
-       }
-       return (R) pval;
+      R pval2 = (R) n.f0.accept(this);
+      if(pval2 instanceof Argument) {
+          Argument pval1 = (Argument) pval2;
+          return pval1.type;
+      }
+      String pval = (String) pval2;
+      if(pval.equals("int") || pval.equals("boolean") || pval.equals("int[]"))
+         return (R) pval;
+      if(pval.equals("this"))
+          return (R) currentClass;
+      _ret = currentSymbolTable.getVariable(pval);
+      if(_ret == null)
+          cryError();
+      return _ret;
    }
 
    /**
@@ -593,7 +639,7 @@ public R visit(PrimaryExpression n) {
    public R visit(IntegerLiteral n) {
       R _ret=null;
       n.f0.accept(this);
-      return (R) "int";
+      return (R) (String) "int";
    }
 
    /**
@@ -602,7 +648,7 @@ public R visit(PrimaryExpression n) {
    public R visit(TrueLiteral n) {
       R _ret=null;
       n.f0.accept(this);
-      return (R) "boolean";
+      return (R) (String) "boolean";
    }
 
    /**
@@ -611,7 +657,7 @@ public R visit(PrimaryExpression n) {
    public R visit(FalseLiteral n) {
       R _ret=null;
       n.f0.accept(this);
-      return (R) "boolean";
+      return (R) (String) "boolean";
    }
 
    /**
@@ -650,8 +696,7 @@ public R visit(PrimaryExpression n) {
            n.f4.accept(this);
            return (R) "int[]";
        }
-       System.out.println("error");
-       System.exit(1);
+       cryError();
        return _ret;
    }
 
@@ -669,10 +714,12 @@ public R visit(PrimaryExpression n) {
        if(global.containsKey(type)){
            n.f2.accept(this);
            n.f3.accept(this);
-           return (R) type;
+           Argument argument = new Argument();
+           argument.name = "main";
+           argument.type = type;
+           return (R) argument;
        }
-       System.out.println("error");
-       System.exit(1);
+       cryError();
        return _ret;
    }
 
@@ -687,8 +734,7 @@ public R visit(PrimaryExpression n) {
        if(exp.equals("boolean")){
            return (R) "boolean";
        }
-       System.out.println("error");
-       System.exit(1);
+       cryError();
        return _ret;
    }
 
