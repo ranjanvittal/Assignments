@@ -7,6 +7,11 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
    //
    SymbolTable symbolTable;
    Stack<Enumeration> argumentsList = new Stack<Enumeration>();
+
+   boolean isBasic(String type) {
+      return type.equals("int") || type.equals("boolean") || type.equals("int[]");
+   }
+
    boolean typeEquals(String a, String b) {
        if(a.equals(b))
            return true;
@@ -16,9 +21,47 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
            return typeEquals(a, parent);
        return false;
    }
-   boolean isBasic(String type) {
-      return type.equals("int") || type.equals("boolean") || type.equals("int[]");
+
+   boolean auxCycleCheck(String a,String b) {
+        if(a.equals("main")){
+            return true;
+        }
+        if(!global.containsKey(a)) {
+            return false;
+        }
+        if(a.equals(b)) {
+            return false;
+        }
+        return auxCycleCheck(global.get(a).parent, b);
    }
+
+   void cycleCheck() {
+       Enumeration globalEnum = global.keys();
+        while(globalEnum.hasMoreElements()) {
+          String g  = (String) globalEnum.nextElement();
+          if(!auxCycleCheck(global.get(g).parent, g))
+              cryError("cycleExists");
+        }
+   }
+
+   boolean compare(Signature a, Signature b) {
+        if(typeEquals(a.returnType, b.returnType)) {
+            Enumeration vEnum1 = a.arguments.elements();
+            Enumeration vEnum2 = b.arguments.elements();
+            while(vEnum1.hasMoreElements() && vEnum2.hasMoreElements()){
+                Argument argument1 = (Argument) vEnum1.nextElement();
+                Argument argument2 = (Argument) vEnum2.nextElement();
+                if(!argument1.type.equals(argument2.type))
+                    return false;
+            }
+            if(vEnum1.hasMoreElements() || vEnum2.hasMoreElements())
+                return false;
+            return true;
+        }
+        return false;
+    }
+
+
    public GJNoArgu(Object global){
       this.global = (Hashtable<String, SymbolTable>) global;
    }
@@ -77,10 +120,11 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(Goal n) {
       R _ret=null;
+      cycleCheck();
       n.f0.accept(this);
       n.f1.accept(this);
       n.f2.accept(this);
-      System.out.println("Program type checked successfully");
+      System.out.print("Program type checked successfully");
       return _ret;
    }
 
@@ -213,8 +257,9 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       if(!global.containsKey(methodType))
           cryError("Improper return type" + methodType);
       String methodName = (String) n.f2.accept(this);
-      Signature k = (Signature) currentSymbolTable.getSignature(methodName);
-      currentSymbolTable = k.symbolTable;
+      Signature methodSign = (Signature) currentSymbolTable.getSignature(methodName);
+      String parent = currentSymbolTable.parent;
+      currentSymbolTable = methodSign.symbolTable;
       n.f3.accept(this);
       n.f4.accept(this);
       n.f5.accept(this);
@@ -223,6 +268,14 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       n.f8.accept(this);
       n.f9.accept(this);
       String expType = (String) n.f10.accept(this);
+      if(!parent.equals("main")) {
+          R existingMethod2 = global.get(parent).getSignature(methodName);
+          if(existingMethod2 != null) {
+              Signature existingMethod = (Signature) existingMethod2;
+              if(!compare(existingMethod, methodSign))
+                  cryError("improper overriding");
+          }
+      }
       if(!typeEquals(methodType, expType))
           cryError("Improper return Expression");
       n.f11.accept(this);
@@ -248,7 +301,9 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
     */
    public R visit(FormalParameter n) {
       R _ret=null;
-      n.f0.accept(this);
+      String type = (String) n.f0.accept(this);
+      if(!global.containsKey(type))
+          cryError("Improper argument type");
       n.f1.accept(this);
       return _ret;
    }
@@ -598,7 +653,6 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       n.f4.accept(this);
       n.f5.accept(this);
       if(argumentsList.peek().hasMoreElements()) {
-          //sign.pretty();
           cryError("Message Send error");
       }
       argumentsList.pop();
@@ -617,7 +671,6 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       Enumeration arguments = argumentsList.peek();
       if(arguments.hasMoreElements()) {
         Argument argument = (Argument) arguments.nextElement();
-        //argument.pretty();
           if(!typeEquals(argument.type, type))
               cryError("ExpressionList error1");
       }
@@ -639,7 +692,6 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       Enumeration arguments = argumentsList.peek();
       if(arguments.hasMoreElements()) {
         Argument argument = (Argument) arguments.nextElement();
-        //argument.pretty();
           if(!typeEquals(argument.type, type))
               cryError("ExpressionList error3");
       }
