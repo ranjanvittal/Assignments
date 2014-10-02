@@ -29,24 +29,24 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       System.out.println(a);
    }
 
-    String move = " MOVE ";
-    String hstore = " HSTORE ";
+    String move = "\n MOVE ";
+    String hstore = "\n HSTORE ";
     String hallocate = " HALLOCATE ";
-    String ret = " RETURN ";
-    String hload = " HLOAD ";
-    String begin = " BEGIN \n";
-    String end = "\n END ";
-    String print = " PRINT ";
-    String jump = " JUMP ";
-    String cjump = " CJUMP ";
+    String ret = "\n RETURN ";
+    String hload = "\n HLOAD ";
+    String begin = "\n BEGIN \n";
+    String end = "\n END \n";
+    String print = "\n PRINT ";
+    String jump = "\n JUMP ";
+    String cjump = "\n CJUMP ";
     String lt = " LT ";
     String plus = " PLUS ";
     String minus = " MINUS ";
     String times = " TIMES ";
-    String noop = " NOOP ";
-    String main = " MAIN ";
-    String error = " ERROR ";
-    String call = " CALL ";
+    String noop = "\n NOOP ";
+    String main = "\n MAIN \n";
+    String error = "\n ERROR ";
+    String call = "\n CALL ";
     Hashtable<String, SymbolTable> global = new Hashtable<String, SymbolTable>();
     Hashtable<String, CompressedTable> compressedGlobal = new Hashtable<String, CompressedTable>();
     class Argument extends Object {
@@ -233,8 +233,9 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             Enumeration e = vtable.keys();
             while(e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                methods += hstore + temp(lastUsedTemp) + vtable.get(key).toString() + " " +  key + "\n";
+                methods += hstore + temp(lastUsedTemp) + vtable.get(key).toString() + " " +  key;
             }
+            methods += "\n";
             return methods;
         }
 
@@ -246,12 +247,12 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             String iterator = temp(lastUsedTemp + 2);
             String labelStart = label(lastUsedLabel);
             String labelEnd = label(lastUsedLabel + 1);
-            String fieldInits = move + iterator + " 4\n";
+            String fieldInits = move + iterator + " 4";
             String fieldSize = " " + fields.size()*4 + " ";
             fieldInits += labelStart;
-            fieldInits += cjump + lt + iterator + fieldSize + labelEnd + "\n";
-            fieldInits += hstore + plus + classInit  + iterator + " 0 0\n";
-            fieldInits += move + iterator+ plus + iterator + " 4\n";
+            fieldInits += cjump + lt + iterator + fieldSize + labelEnd;
+            fieldInits += hstore + plus + classInit  + iterator + " 0 0";
+            fieldInits += move + iterator+ plus + iterator + " 4";
             fieldInits += jump + labelStart + "\n";
             fieldInits += labelEnd;
             fieldInits += hstore + classInit + " 0 " + methodInit + "\n";

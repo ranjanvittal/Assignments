@@ -23,7 +23,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    }
 
   void addArgumentsAsTemp(Vector<Argument> arguments) {
-      lastUsedTemp = 0;
+      lastUsedTemp = 1;
       int i= 0 ;
       while(i < arguments.size()) {
         String argumentName = arguments.get(i).name;
@@ -31,15 +31,16 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
         i++;
         lastUsedTemp++;
       }
+      currentIdentifiers.put("this", new Integer(0));
    }
 
 
   void makeArray(int arrayTemp, int expressionTemp) {
     String expression = temp(expressionTemp);
     String array = temp(arrayTemp);
-	  printValue += move + array + hallocate + times + " 4 " + plus + expression + " 1 ";
+	  printValue += move + array + hallocate + times + " 4 " + plus + expression + " 1 \n";
 	  String iterator = temp(lastUsedTemp++);
-    printValue += move + iterator + " 4 ";
+    printValue += move + iterator + " 4 \n";
     String labelStart = label(lastUsedLabel++);
     String labelEnd = label(lastUsedLabel++);
     printValue += labelStart + cjump + lt + iterator + times + plus + expression + " 1 4 " + labelEnd + "\n";
@@ -256,8 +257,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       String parent = currentSymbolTable.parent;
       currentSymbolTable = methodSign.symbolTable;
       inClass = false;
-      printValue += currentCompressedTable.getMethod(methodName) + " ";
-      printValue += "[ " + methodSign.arguments.size() + " ]\n";
+      printValue += "\n" + currentCompressedTable.getMethod(methodName) + " ";
+      printValue += "[ " + (methodSign.arguments.size()+1) + " ]\n";
       addArgumentsAsTemp(methodSign.arguments);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
@@ -557,7 +558,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(CompareExpression n, A argu) {
        // String type1 = (String)
-       n.f0.accept(this, argu);
+       printValue += lt;
+	   n.f0.accept(this, argu);
        n.f1.accept(this, argu);
        // String type2 = (String)
        n.f2.accept(this, argu);
@@ -734,7 +736,16 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
 public R visit(PrimaryExpression n, A argu) {
 	 R _ret = null;
-      n.f0.accept(this, argu);
+      String name = (String) n.f0.accept(this, argu);
+      if(n.f0.which == 3) {
+    	  //println(name);
+    	  if(currentIdentifiers.containsKey(name)) {
+    		  printValue += temp(currentIdentifiers.get(name).intValue());
+    	  }
+    	  else {
+    		  printValue += plus + temp(0) + currentCompressedTable.fieldOffset(name) + " \n";
+    	  }
+      }
 //      if(pval2 instanceof String) {
 //        String pval = (String) pval2;
 //        if(isBasic(pval))
@@ -757,7 +768,7 @@ public R visit(PrimaryExpression n, A argu) {
    public R visit(IntegerLiteral n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      printValue += n.f0.toString();
+      printValue += " " + n.f0.toString() + " ";
       return _ret;
    }
 
@@ -816,7 +827,7 @@ public R visit(PrimaryExpression n, A argu) {
       int arrayTemp = lastUsedTemp++;
       int expressionTemp = lastUsedTemp++;
       printValue += begin;
-      printValue += move + temp(expressionTemp);
+      printValue += move + temp(expressionTemp) +"\n";
       n.f3.accept(this, argu);
       makeArray(arrayTemp, expressionTemp);
 //       if(exp.equals("int")){
