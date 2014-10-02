@@ -11,7 +11,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    Hashtable<String, Integer> currentIdentifiers = new Hashtable<String, Integer>();
    CompressedTable currentCompressedTable;
    boolean inClass = false;
-   int lastUsedTemp = 0;
+   int lastUsedtemp = 0;
    int lastUsedLabel = 0;
    // boolean isBasic(String type) {
    //    return type.equals("int") || type.equals("boolean") || type.equals("int[]");
@@ -22,24 +22,24 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       this.global = ((Returns) returns).global;
    }
 
-  void addArgumentsAsTemp(Vector<Argument> arguments) {
-      lastUsedTemp = 1;
+  void addArgumentsAstemp(Vector<Argument> arguments) {
+      lastUsedtemp = 1;
       int i= 0 ;
       while(i < arguments.size()) {
         String argumentName = arguments.get(i).name;
-        currentIdentifiers.put(argumentName, new Integer(lastUsedTemp));
+        currentIdentifiers.put(argumentName, new Integer(lastUsedtemp));
         i++;
-        lastUsedTemp++;
+        lastUsedtemp++;
       }
       currentIdentifiers.put("this", new Integer(0));
    }
 
 
-  void makeArray(int arrayTemp, int expressionTemp) {
-    String expression = temp(expressionTemp);
-    String array = temp(arrayTemp);
+  void makeArray(int arraytemp, int expressiontemp) {
+    String expression = temp(expressiontemp);
+    String array = temp(arraytemp);
 	  printValue += move + array + hallocate + times + " 4 " + plus + expression + " 1 \n";
-	  String iterator = temp(lastUsedTemp++);
+	  String iterator = temp(lastUsedtemp++);
     printValue += move + iterator + " 4 \n";
     String labelStart = label(lastUsedLabel++);
     String labelEnd = label(lastUsedLabel++);
@@ -52,6 +52,33 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     printValue += end;
   }
 
+  void makeLookup(String arraytemp, String expressionTemp) {
+      printValue += begin;
+      printValue += hload + temp 55  PLUS
+      printValue += begin
+      printValue += hload + temp 56 temp " 0 " + " 4 ";
+      printValue += ret + temp 56;
+      printValue += end;
+      printValue += plus;
+      printValue += begin;
+      printValue += move temp 53  + times + expressionTemp + " 4 ";
+      printValue += hload temp 54;
+      printValue += begin
+      printValue += hload temp 56 temp " 0 " + " 4 ";
+      printValue += ret
+      printValue += temp 56
+      printValue += end
+      printValue += " 0 "
+      String labelStart = label(lastUsedLabel++);
+      printValue += cjump + minus + " 1 " + lt + temp 53 + temp 54 + labelStart;
+      printValue += error;
+      printValue += labelStart + noop;
+      printValue += ret + temp 53;
+      printValue += end;
+      printValue += " 4  0 ";
+      printValue += ret + temp 55;
+      printValue += end;
+  }
    public R visit(NodeList n, A argu) {
       R _ret=null;
       int _count=0;
@@ -223,8 +250,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       String type = (String) n.f0.accept(this, argu);
       String name = (String) n.f1.accept(this, argu);
       if(!inClass) {
-          currentIdentifiers.put(name, new Integer(lastUsedTemp));
-          printValue += move + temp(lastUsedTemp++) + "0\n";
+          currentIdentifiers.put(name, new Integer(lastUsedtemp));
+          printValue += move + temp(lastUsedtemp++) + "0\n";
       }
       n.f2.accept(this, argu);
       return _ret;
@@ -259,7 +286,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       inClass = false;
       printValue += "\n" + currentCompressedTable.getMethod(methodName) + " ";
       printValue += "[ " + (methodSign.arguments.size()+1) + " ]\n";
-      addArgumentsAsTemp(methodSign.arguments);
+      printValue += begin;
+      addArgumentsAstemp(methodSign.arguments);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       n.f5.accept(this, argu);
@@ -279,8 +307,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 //      if(!typeEquals(methodType, expType))
 //          cryError("Improper return Expression");
       n.f11.accept(this, argu);
+      printValue += ret;
       n.f12.accept(this, argu);
-      currentCompressedTable = compressedGlobal.get(currentClass);
+      printValue += end;
+      currentSymbolTable = global.get(currentClass);
       return _ret;
    }
 
@@ -523,7 +553,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     *       | CompareExpression()
     *       | PlusExpression()
     *       | MinusExpression()
-    *       | TimesExpression()
+    *       | timesExpression()
     *       | ArrayLookup()
     *       | ArrayLength()
     *       | MessageSend()
@@ -575,6 +605,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(PlusExpression n, A argu) {
        // String type1 = (String)
+       printValue += plus;
        n.f0.accept(this, argu);
        n.f1.accept(this, argu);
        // String type2 = (String)
@@ -591,6 +622,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(MinusExpression n, A argu) {
        // String type1 = (String)
+       printValue += minus;
        n.f0.accept(this, argu);
        n.f1.accept(this, argu);
        // String type2 = (String)
@@ -606,12 +638,12 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     * f2 -> PrimaryExpression()
     */
    public R visit(TimesExpression n, A argu) {
-       printValue += "TIMES";
+       printValue += times;
        n.f0.accept(this, argu);
        n.f1.accept(this, argu);
        n.f2.accept(this, argu);
        // if(!(type1.equals("int") && type2.equals("int")))
-       //    cryError("Times Exp error");
+       //    cryError("times Exp error");
        return (R) "int";
    }
    /**
@@ -622,12 +654,16 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(ArrayLookup n, A argu) {
        printValue += begin;
+       String currentArray = temp(lastUsedtemp++);
+       String expression = temp(lastUsedtemp++);
+       printValue += move + currentArray;
        n.f0.accept(this, argu);
        n.f1.accept(this, argu);
-       //printValue += begin;
-       String expression = (String) n.f2.accept(this, argu);
-       //printValue += makeLookup(lastUsedTemp - 1);
-       //printValue += ret + temp(lastUsedTemp - 1) + end;
+       printValue += move + expression;
+       n.f2.accept(this, argu);
+       makeLookup(currentArray, expression);
+       printValue += ret +
+       printValue += end;
        // if(!(type1.equals("int[]") && type2.equals("int")))
        //    cryError("Array lookup error");
        return (R) "int";
@@ -639,7 +675,14 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(ArrayLength n, A argu) {
       // String type1 = (String)
+      String currentArray = temp(lastUsedtemp++);
+      String length = temp(lastUsedtemp++);
+      printValue += begin;
+      printValue += move + currentArray;
       n.f0.accept(this, argu);
+      printValue += hload + length + currentArray + " 0 \n";
+      printValue += ret + length + "\n";
+      printValue += end;
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
       // if(!type1.equals("int[]"))
@@ -743,8 +786,12 @@ public R visit(PrimaryExpression n, A argu) {
     		  printValue += temp(currentIdentifiers.get(name).intValue());
     	  }
     	  else {
-    		  printValue += plus + temp(0) + currentCompressedTable.fieldOffset(name) + " \n";
-    	  }
+          String loaded = temp(lastUsedtemp++);
+          printValue += begin;
+    		  printValue += hload  + loaded + temp(0) + currentCompressedTable.fieldOffset(name) + " \n";
+    	    printValue += ret + loaded;
+          printValue += end;
+        }
       }
 //      if(pval2 instanceof String) {
 //        String pval = (String) pval2;
@@ -824,12 +871,12 @@ public R visit(PrimaryExpression n, A argu) {
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
-      int arrayTemp = lastUsedTemp++;
-      int expressionTemp = lastUsedTemp++;
+      int arraytemp = lastUsedtemp++;
+      int expressiontemp = lastUsedtemp++;
       printValue += begin;
-      printValue += move + temp(expressionTemp) +"\n";
+      printValue += move + temp(expressiontemp) +"\n";
       n.f3.accept(this, argu);
-      makeArray(arrayTemp, expressionTemp);
+      makeArray(arraytemp, expressiontemp);
 //       if(exp.equals("int")){
 //           n.f4.accept(this, argu);
 //           return (R) "int[]";
@@ -849,8 +896,8 @@ public R visit(PrimaryExpression n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
       String value = (String) n.f1.accept(this, argu);
-      printValue += compressedGlobal.get(value).init(lastUsedTemp, lastUsedLabel);
-      lastUsedTemp += 3;
+      printValue += compressedGlobal.get(value).init(lastUsedtemp, lastUsedLabel);
+      lastUsedtemp += 3;
       lastUsedLabel += 2;
       //cryError("AllocExpr error");
       return _ret;
