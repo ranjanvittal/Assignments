@@ -9,7 +9,7 @@ public class P2 {
          Node root = new MiniJavaParser(System.in).Goal();
          //System.out.println("Program parsed successfully");
          Object a =  root.accept(new GJDepthFirst(), null);
-         //root.accept(new GJDepth(a), null);
+         root.accept(new GJDepth(a), null);
          //System.out.println("Hello");
       }
       catch (ParseException e) {
