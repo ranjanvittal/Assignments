@@ -265,6 +265,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f0.accept(this);
       n.f1.accept(this);
       currentClass = n.f1.f0.toString();
+      if(global.containsKey(currentClass)) {
+          cryError("Redeclaration of class");
+      }
       currentSymbolTable = new SymbolTable();
       currentHashIdentifiers = new Hashtable<String, String>();
       currentHashMethods = new Hashtable<String, Signature>();
@@ -297,6 +300,9 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       R _ret=null;
       n.f0.accept(this);
       currentClass = (String) n.f1.accept(this);
+      if(global.containsKey(currentClass)) {
+          cryError("Redeclaration of class");
+      }
       n.f2.accept(this);
       SymbolTable currentSymbolTable = new SymbolTable();
       String parent = (String) n.f3.accept(this);

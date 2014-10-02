@@ -15,7 +15,9 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
    boolean typeEquals(String a, String b) {
        if(a.equals(b))
            return true;
-
+       if(isBasic(a) || isBasic(b)) {
+            return false;
+        }
        String parent = global.get(b).parent;
        if(!parent.equals("main"))
            return typeEquals(a, parent);
@@ -638,12 +640,12 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       String type = (String) n.f0.accept(this);
       n.f1.accept(this);
       if(isBasic(type))
-          cryError("Message Send Error");
+          cryError("Message Send Error1");
       SymbolTable symbolTable1 = global.get(type);
       String methodName = (String) n.f2.accept(this);
       _ret = symbolTable1.getSignature(methodName);
       if(_ret == null)
-          cryError("Message Send error");
+          cryError("Message Send error2");
       Signature sign = (Signature) _ret;
       Vector<Argument> v = sign.arguments;
       Enumeration arguments = v.elements();
@@ -653,7 +655,7 @@ public class GJNoArgu<R> extends GJNoArguDepthFirst<R> {
       n.f4.accept(this);
       n.f5.accept(this);
       if(argumentsList.peek().hasMoreElements()) {
-          cryError("Message Send error");
+          cryError("Message Send error3");
       }
       argumentsList.pop();
       return (R) sign.returnType;

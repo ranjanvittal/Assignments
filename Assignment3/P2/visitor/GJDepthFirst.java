@@ -11,14 +11,42 @@ import java.util.*;
  * order.  Your visitors may extend this class.
  */
 public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
+
    void cryError(String message) {
         System.out.print("Type error");
         System.exit(1);
-    }
-   String intToString(int number) {
-	   return new Integer(number).toString();
    }
 
+   String temp(int number) {
+      return " TEMP " + number + " ";
+   }
+
+   String label(int number) {
+      return " L" + number + " ";
+   }
+
+   void println(String a) {
+      System.out.println(a);
+   }
+
+    String move = " MOVE ";
+    String hstore = " HSTORE ";
+    String hallocate = " HALLOCATE ";
+    String ret = " RETURN ";
+    String hload = " HLOAD ";
+    String begin = " BEGIN \n";
+    String end = "\n END ";
+    String print = " PRINT ";
+    String jump = " JUMP ";
+    String cjump = " CJUMP ";
+    String lt = " LT ";
+    String plus = " PLUS ";
+    String minus = " MINUS ";
+    String times = " TIMES ";
+    String noop = " NOOP ";
+    String main = " MAIN ";
+    String error = " ERROR ";
+    String call = " CALL ";
     Hashtable<String, SymbolTable> global = new Hashtable<String, SymbolTable>();
     Hashtable<String, CompressedTable> compressedGlobal = new Hashtable<String, CompressedTable>();
     class Argument extends Object {
@@ -29,7 +57,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
               this.type = type;
           }
           public void pretty(){
-              System.out.println(name + " : " + type);
+              println(name + " : " + type);
           }
      }
 
@@ -58,15 +86,15 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         }
         public void pretty(){
             int i = 0;
-            System.out.println("Method arguments :");
+            println("Method arguments :");
             Enumeration vEnum = arguments.elements();
             while(vEnum.hasMoreElements()){
                 Argument argument = (Argument) vEnum.nextElement();
-                System.out.println(argument.type + " " + argument.name);
+                println(argument.type + " " + argument.name);
             }
-            System.out.println("Return Type :");
-            System.out.println(returnType);
-            System.out.println("");
+            println("Return Type :");
+            println(returnType);
+            println("");
             //symbolTable.pretty();
         }
     }
@@ -91,7 +119,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         }
         public String getVariable(String name, String key) {
             if(variableSymbolTable.containsKey(key))
-                return (R) name + "_" + key;
+                return (R) name + "_" + key + "_" + name.length();
             else if(!parent.equals("main"))
                 return global.get(parent).getVariable(parent, key);
             return "";
@@ -99,7 +127,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
 
         public String getMethod(String name, String key) {
             if(methodSymbolTable.containsKey(key))
-                return name + "_" + key;
+                return name + "_" + key + "_" + name.length();
             else if(!parent.equals("main"))
                 return global.get(parent).getMethod(parent, key);
             return "";
@@ -124,25 +152,25 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         public void pretty(){
             Set entrySet = variableSymbolTable.entrySet();
             Iterator it = entrySet.iterator();
-            System.out.println("variableSymbolTable :");
+            println("variableSymbolTable :");
             while(it.hasNext()){
                 System.out.println(it.next());
             }
-            System.out.println("methodSymbolTable :");
+            println("methodSymbolTable :");
             Enumeration e = methodSymbolTable.keys();
             while(e.hasMoreElements()){
                 String key = (String) e.nextElement();
-                System.out.println(key);
-                System.out.println("");
+                println(key);
+                println("");
                 methodSymbolTable.get(key).pretty();
             }
 
-            System.out.println("parent :");
+            println("parent :");
             if(parent != null)
-                System.out.println(parent);
+                println(parent);
             else
-                System.out.println("none");
-            System.out.println("");
+                println("none");
+            println("");
         }
     }
 
@@ -157,7 +185,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             this.className = className;
         }
 
-        public String getVariable(String field) {
+        public String getField(String field) {
             return global.get(className).getVariable(className, field);
         }
 
@@ -165,17 +193,69 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         	return global.get(className).getMethod(className, method);
         }
 
+        public Integer fieldOffset(String field) {
+            return fields.get(getField(field));
+        }
+
+        public Integer methodOffset(String method) {
+            return vtable.get(getMethod(method));
+        }
+
         public void pretty() {
             Enumeration e = fields.keys();
+            println(className + " :");
+            println("\tvariables :");
             while(e.hasMoreElements()) {
                 String field = (String) e.nextElement();
-                System.out.println(field + " " + fields.get(field).toString() + "\n");
+                println("\t\t" + field + " " + fields.get(field).toString() + "\n");
             }
+            println("\tmethods :");
             e = vtable.keys();
             while(e.hasMoreElements()) {
                 String method = (String) e.nextElement();
-                System.out.println(method + " " + vtable.get(method).toString() + "\n");
+                println("\t\t" + method + " " + vtable.get(method).toString() + "\n");
             }
+        }
+
+        public String init(int lastUsedTemp, int lastUsedLabel) {
+            String newInit = begin;
+            newInit += move + temp(lastUsedTemp) + hallocate + vtable.size()*4 + "\n";
+            newInit += move + temp(lastUsedTemp) + hallocate + (fields.size()+1)*4 + "\n";
+            newInit += methodInit(lastUsedTemp);
+            newInit += fieldInit(lastUsedTemp, lastUsedLabel);
+            newInit += ret + temp(lastUsedTemp + 1);
+            newInit += end;
+            return newInit;
+        }
+
+        public String methodInit(int lastUsedTemp) {
+            String methods = "";
+            Enumeration e = vtable.keys();
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                methods += hstore + temp(lastUsedTemp) + vtable.get(key).toString() + " " +  key + "\n";
+            }
+            return methods;
+        }
+
+
+
+        public String fieldInit(int lastUsedTemp, int lastUsedLabel) {
+            String methodInit = temp(lastUsedTemp);
+            String classInit = temp(lastUsedTemp + 1);
+            String iterator = temp(lastUsedTemp + 2);
+            String labelStart = label(lastUsedLabel);
+            String labelEnd = label(lastUsedLabel + 1);
+            String fieldInits = move + iterator + " 4\n";
+            String fieldSize = " " + fields.size()*4 + " ";
+            fieldInits += labelStart;
+            fieldInits += cjump + lt + iterator + fieldSize + labelEnd + "\n";
+            fieldInits += hstore + plus + classInit  + iterator + " 0 0\n";
+            fieldInits += move + iterator+ plus + iterator + " 4\n";
+            fieldInits += jump + labelStart + "\n";
+            fieldInits += labelEnd;
+            fieldInits += hstore + classInit + " 0 " + methodInit + "\n";
+            return fieldInits;
         }
 
     }
@@ -203,7 +283,8 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             e = s.variableSymbolTable.keys();
             while(e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                fields.put(className + "_" + key, new Integer(i));
+                String entryToFields = className + "_" + key + "_" + className.length();
+                fields.put(entryToFields, new Integer(i));
                 i += 4;
             }
             i = 0;
@@ -219,13 +300,15 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
                 String parent = global.get(className).parent;
                 String existingMethod = global.get(parent).getMethod(parent, key);
                 if(existingMethod.equals("")) {
-                    vtable.put(className + "_" + key, new Integer(i));
+                    String entryToVtable = className + "_" + key + "_" + className.length();
+                    vtable.put(entryToVtable, new Integer(i));
                     i += 4;
                 }
                 else {
                     Integer index = vtable.get(existingMethod);
                     vtable.remove(existingMethod);
-                    vtable.put(className + "_" + key, index);
+                    String entryToVtable = className + "_" + key + "_" + className.length();
+                    vtable.put(entryToVtable, index);
                 }
             }
             CompressedTable compressedTable = new CompressedTable(fields, vtable,
@@ -240,14 +323,16 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             int i = 4;
             while(e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                fields.put(className + "_" + key, new Integer(i));
+                String entryToFields = className + "_" + key + "_" + className.length();
+                fields.put(entryToFields, new Integer(i));
                 i += 4;
             }
             e = s.methodSymbolTable.keys();
             i = 0;
             while(e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                vtable.put(className + "_" + key, new Integer(i));
+                String entryToVtable = className + "_" + key + "_" + className.length();
+                vtable.put(entryToVtable, new Integer(i));
                 i += 4;
             }
 
@@ -264,7 +349,9 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         while(e.hasMoreElements()) {
             String key = (String) e.nextElement();
             CompressedTable a = compressSymbolTable(key, global.get(key));
-            a.pretty();
+            println(a.init(55, 2));
+            println(a.fieldOffset("num").toString());
+            println(a.methodOffset("ComputeFac").toString());
         }
     }
 
@@ -420,7 +507,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       n.f4.accept(this, null);
       global.put(currentClass, currentSymbolTable);
       n.f5.accept(this, null);
-      //System.out.println(currentClass);
+      //println(currentClass);
       //currentSymbolTable.pretty();
       return _ret;
    }
@@ -457,7 +544,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       n.f6.accept(this, null);
       n.f7.accept(this, null);
       global.put(currentClass, currentSymbolTable);
-      //System.out.println(currentClass);
+      //println(currentClass);
       //currentSymbolTable.pretty();
       return _ret;
    }
