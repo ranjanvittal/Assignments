@@ -13,9 +13,9 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    boolean inClass = false;
    int lastUsedTemp = 0;
    int lastUsedLabel = 0;
-   boolean isBasic(String type) {
-      return type.equals("int") || type.equals("boolean") || type.equals("int[]");
-   }
+   // boolean isBasic(String type) {
+   //    return type.equals("int") || type.equals("boolean") || type.equals("int[]");
+   // }
 
    public GJDepth(Object returns){
       this.compressedGlobal = ((Returns) returns).compressedGlobal;
@@ -177,6 +177,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       R _ret=null;
       n.f0.accept(this, argu);
       currentClass = (String) n.f1.accept(this, argu);
+      currentSymbolTable = global.get(currentClass);
       currentCompressedTable = compressedGlobal.get(currentClass);
       inClass = true;
       n.f2.accept(this, argu);
@@ -200,6 +201,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       R _ret=null;
       n.f0.accept(this, argu);
       currentClass = (String) n.f1.accept(this, argu);
+      currentSymbolTable = global.get(currentClass);
       currentCompressedTable = compressedGlobal.get(currentClass);
       inClass = true;
       n.f2.accept(this, argu);
@@ -245,9 +247,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    public R visit(MethodDeclaration n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      String methodType = (String) n.f1.accept(this, argu);
-      if(!compressedGlobal.containsKey(methodType))
-          cryError("Improper return type" + methodType);
+      // String methodType = (String)
+      n.f1.accept(this, argu);
+      // if(!compressedGlobal.containsKey(methodType))
+      //     cryError("Improper return type" + methodType);
       String methodName = (String) n.f2.accept(this, argu);
       Signature methodSign = (Signature) currentSymbolTable.getSignature(methodName);
       String parent = currentSymbolTable.parent;
@@ -486,9 +489,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       R _ret=null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      String type = (String) n.f2.accept(this, argu);
-      if(!type.equals("boolean"))
-          cryError("not boolean");
+      // String type = (String)
+      n.f2.accept(this, argu);
+      // if(!type.equals("boolean"))
+      //     cryError("not boolean");
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       return _ret;
@@ -505,9 +509,9 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       R _ret=null;
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      String type = (String) n.f2.accept(this, argu);
-      if(!type.equals("int"))
-          cryError("can only print int");
+      n.f2.accept(this, argu);
+      // if(!type.equals("int"))
+      //     cryError("can only print int");
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       return _ret;
@@ -536,11 +540,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     * f2 -> PrimaryExpression()
     */
    public R visit(AndExpression n, A argu) {
-       String type1 = (String) n.f0.accept(this, argu);
+       // String type1 = (String)
+       n.f0.accept(this, argu);
        n.f1.accept(this, argu);
-       String type2 = (String) n.f2.accept(this, argu);
-       if(!(type1.equals("boolean") && type2.equals("boolean")))
-          cryError("And exp error");
+       // String type2 = (String)
+       n.f2.accept(this, argu);
+       // if(!(type1.equals("boolean") && type2.equals("boolean")))
+       //    cryError("And exp error");
        return (R) "boolean";
    }
 
@@ -550,11 +556,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     * f2 -> PrimaryExpression()
     */
    public R visit(CompareExpression n, A argu) {
-       String type1 = (String) n.f0.accept(this, argu);
+       // String type1 = (String)
+       n.f0.accept(this, argu);
        n.f1.accept(this, argu);
-       String type2 = (String) n.f2.accept(this, argu);
-       if(!(type1.equals("int") && type2.equals("int")))
-          cryError("Greater than exp error");
+       // String type2 = (String)
+       n.f2.accept(this, argu);
+       // if(!(type1.equals("int") && type2.equals("int")))
+       //    cryError("Greater than exp error");
        return (R) "boolean";
    }
 
@@ -564,11 +572,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     * f2 -> PrimaryExpression()
     */
    public R visit(PlusExpression n, A argu) {
-       String type1 = (String) n.f0.accept(this, argu);
+       // String type1 = (String)
+       n.f0.accept(this, argu);
        n.f1.accept(this, argu);
-       String type2 = (String) n.f2.accept(this, argu);
-       if(!(type1.equals("int") && type2.equals("int")))
-          cryError("Plus exp error");
+       // String type2 = (String)
+       n.f2.accept(this, argu);
+       // if(!(type1.equals("int") && type2.equals("int")))
+       //    cryError("Plus exp error");
        return (R) "int";
    }
 
@@ -578,11 +588,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     * f2 -> PrimaryExpression()
     */
    public R visit(MinusExpression n, A argu) {
-       String type1 = (String) n.f0.accept(this, argu);
+       // String type1 = (String)
+       n.f0.accept(this, argu);
        n.f1.accept(this, argu);
-       String type2 = (String) n.f2.accept(this, argu);
-       if(!(type1.equals("int") && type2.equals("int")))
-          cryError("Minus Exp error");
+       // String type2 = (String)
+       n.f2.accept(this, argu);
+       // if(!(type1.equals("int") && type2.equals("int")))
+       //    cryError("Minus Exp error");
        return (R) "int";
    }
 
@@ -624,7 +636,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     * f2 -> "length"
     */
    public R visit(ArrayLength n, A argu) {
-      String type1 = (String) n.f0.accept(this, argu);
+      // String type1 = (String)
+      n.f0.accept(this, argu);
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
       // if(!type1.equals("int[]"))
@@ -642,10 +655,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(MessageSend n, A argu) {
       R _ret=null;
-      String type = (String) n.f0.accept(this, argu);
+      n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      if(isBasic(type))
-          cryError("Message Send Error1");
+      // if(isBasic(type))
+      //     cryError("Message Send Error1");
 //      SymbolTable symbolTable1 = compressedGlobal.get(type);
 //      String methodName = (String) n.f2.accept(this, argu);
 //      _ret = symbolTable1.getSignature(methodName);
@@ -659,10 +672,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       n.f5.accept(this, argu);
-      if(argumentsList.peek().hasMoreElements()) {
-          cryError("Message Send error3");
-      }
-      argumentsList.pop();
+      // if(argumentsList.peek().hasMoreElements()) {
+      //     cryError("Message Send error3");
+      // }
+      // argumentsList.pop();
       return _ret;
    }
 
@@ -839,11 +852,12 @@ public R visit(PrimaryExpression n, A argu) {
    public R visit(NotExpression n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      String exp = (String) n.f1.accept(this, argu);
-       if(exp.equals("boolean")){
-           return (R) "boolean";
-       }
-       cryError("NotExprError");
+      // String exp = (String)
+      n.f1.accept(this, argu);
+       // if(exp.equals("boolean")){
+       //     return (R) "boolean";
+       // }
+       // cryError("NotExprError");
        return _ret;
    }
 

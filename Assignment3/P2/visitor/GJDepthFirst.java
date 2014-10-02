@@ -349,9 +349,9 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         while(e.hasMoreElements()) {
             String key = (String) e.nextElement();
             CompressedTable a = compressSymbolTable(key, global.get(key));
-            println(a.init(55, 2));
-            //println(a.fieldOffset("num").toString());
-            //println(a.methodOffset("ComputeFac").toString());
+            // println(a.init(55, 2));
+            // println(a.fieldOffset("num").toString());
+            // println(a.methodOffset("ComputeFac").toString());
         }
     }
 
