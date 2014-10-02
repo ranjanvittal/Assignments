@@ -15,10 +15,12 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         System.out.print("Type error");
         System.exit(1);
     }
-
+   String intToString(int number) {
+	   return new Integer(number).toString();
+   }
 
     Hashtable<String, SymbolTable> global = new Hashtable<String, SymbolTable>();
-
+    Hashtable<String, CompressedTable> compressedGlobal = new Hashtable<String, CompressedTable>();
     class Argument extends Object {
           String name;
           String type;
@@ -29,7 +31,16 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
           public void pretty(){
               System.out.println(name + " : " + type);
           }
-        }
+     }
+
+    class Returns extends Object{
+    	Hashtable<String, SymbolTable> global;
+    	Hashtable<String, CompressedTable> compressedGlobal;
+    	Returns(Hashtable<String, SymbolTable> global, Hashtable<String, CompressedTable> compressedGlobal) {
+    		this.global = global;
+    		this.compressedGlobal = compressedGlobal;
+    	}
+    }
 
     class Signature extends Object{
         Vector<Argument> arguments;
@@ -71,21 +82,35 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         return false;
     }
 
-    class SymbolTable extends Object{
+    class SymbolTable extends Object {
         Hashtable<String, String> variableSymbolTable;
         Hashtable<String, Signature> methodSymbolTable;
         String parent;
         SymbolTable(){
             parent = "main";
         }
-        public R getVariable(String key){
+        public String getVariable(String name, String key) {
             if(variableSymbolTable.containsKey(key))
-                return (R) variableSymbolTable.get(key);
+                return (R) name + "_" + key;
             else if(!parent.equals("main"))
-                return global.get(parent).getVariable(key);
-            return null;
+                return global.get(parent).getVariable(parent, key);
+            return "";
         }
 
+        public String getMethod(String name, String key) {
+            if(methodSymbolTable.containsKey(key))
+                return name + "_" + key;
+            else if(!parent.equals("main"))
+                return global.get(parent).getMethod(parent, key);
+            return "";
+        }
+
+        // public boolean currentContains(String key) {
+        //     if(methodSymbolTable.containsKey(key))
+        //         return true;
+        //     else
+        //         return false;
+        // }
         public R getSignature(String key){
             if(methodSymbolTable.containsKey(key))
                 return (R) methodSymbolTable.get(key);
@@ -121,7 +146,127 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         }
     }
 
+    class CompressedTable {
+        Hashtable<String, Integer> fields;
+        Hashtable<String, Integer> vtable;
+        String className;
+        CompressedTable(Hashtable<String, Integer> fields,
+            Hashtable<String, Integer> vtable, String className) {
+            this.fields = fields;
+            this.vtable = vtable;
+            this.className = className;
+        }
 
+        public String getVariable(String field) {
+            return global.get(className).getVariable(className, field);
+        }
+
+        public String getMethod(String method) {
+        	return global.get(className).getMethod(className, method);
+        }
+
+        public void pretty() {
+            Enumeration e = fields.keys();
+            while(e.hasMoreElements()) {
+                String field = (String) e.nextElement();
+                System.out.println(field + " " + fields.get(field).toString() + "\n");
+            }
+            e = vtable.keys();
+            while(e.hasMoreElements()) {
+                String method = (String) e.nextElement();
+                System.out.println(method + " " + vtable.get(method).toString() + "\n");
+            }
+        }
+
+    }
+
+    CompressedTable compressSymbolTable(String className, SymbolTable s) {
+        CompressedTable a;
+        if(compressedGlobal.containsKey(className))
+            return compressedGlobal.get(className);
+
+        if(!s.parent.equals("main")) {
+        	a = compressSymbolTable(s.parent, global.get(s.parent));
+            Hashtable<String, Integer> parentFields;
+            Hashtable<String, Integer> parentVtable;
+            parentFields = a.fields;
+            parentVtable = a.vtable;
+            Hashtable<String, Integer> fields = new Hashtable<String, Integer>();
+            Hashtable<String, Integer> vtable = new Hashtable<String, Integer>();
+            Enumeration e = parentFields.keys();
+            int i = 4;
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                fields.put(key, parentFields.get(key));
+                i += 4;
+            }
+            e = s.variableSymbolTable.keys();
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                fields.put(className + "_" + key, new Integer(i));
+                i += 4;
+            }
+            i = 0;
+            e = parentVtable.keys();
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                vtable.put(key, parentVtable.get(key));
+                i += 4;
+            }
+            e = s.methodSymbolTable.keys();
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                String parent = global.get(className).parent;
+                String existingMethod = global.get(parent).getMethod(parent, key);
+                if(existingMethod.equals("")) {
+                    vtable.put(className + "_" + key, new Integer(i));
+                    i += 4;
+                }
+                else {
+                    Integer index = vtable.get(existingMethod);
+                    vtable.remove(existingMethod);
+                    vtable.put(className + "_" + key, index);
+                }
+            }
+            CompressedTable compressedTable = new CompressedTable(fields, vtable,
+                                                  className);
+            compressedGlobal.put(className, compressedTable);
+            return compressedTable;
+        }
+        else {
+            Hashtable<String, Integer> fields = new Hashtable<String, Integer>();
+            Hashtable<String, Integer> vtable = new Hashtable<String, Integer>();
+            Enumeration e = s.variableSymbolTable.keys();
+            int i = 4;
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                fields.put(className + "_" + key, new Integer(i));
+                i += 4;
+            }
+            e = s.methodSymbolTable.keys();
+            i = 0;
+            while(e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                vtable.put(className + "_" + key, new Integer(i));
+                i += 4;
+            }
+
+            CompressedTable compressedTable = new CompressedTable(fields, vtable, className);
+            compressedGlobal.put(className, compressedTable);
+            return compressedTable;
+        }
+
+    }
+
+
+    void compressGlobal() {
+        Enumeration e = global.keys();
+        while(e.hasMoreElements()) {
+            String key = (String) e.nextElement();
+            CompressedTable a = compressSymbolTable(key, global.get(key));
+            a.pretty();
+        }
+    }
 
     SymbolTable currentSymbolTable;
     String currentClass;
@@ -187,16 +332,17 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     */
    public R visit(Goal n, A argu) {
       R _ret=null;
-      String k = "int[]";
-      global.put(k, new SymbolTable());
-      k = "int";
-      global.put(k, new SymbolTable());
-      k = "boolean";
-      global.put(k, new SymbolTable());
+      // String k = "int[]";
+      // global.put(k, new SymbolTable());
+      // k = "int";
+      // global.put(k, new SymbolTable());
+      // k = "boolean";
+      // global.put(k, new SymbolTable());
       n.f0.accept(this, null);
       n.f1.accept(this, null);
       n.f2.accept(this, null);
-      return (R) global;
+      compressGlobal();
+      return (R) new Returns(global, compressedGlobal);
    }
 
    /**
@@ -221,12 +367,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(MainClass n, A argu) {
       R _ret=null;
       n.f0.accept(this, null);
-      String s = (String) n.f1.accept(this, null);
-      SymbolTable l = new SymbolTable();
-      l.variableSymbolTable = new Hashtable<String, String>();
-      l.methodSymbolTable = new Hashtable<String, Signature>();
-      l.parent = "main";
-      global.put(s, l);
+      n.f1.accept(this, null);
       n.f2.accept(this, null);
       n.f3.accept(this, null);
       n.f4.accept(this, null);
@@ -268,9 +409,6 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       n.f0.accept(this, null);
       n.f1.accept(this, null);
       currentClass = n.f1.f0.toString();
-      if(global.containsKey(currentClass)) {
-          cryError("Redeclaration of class");
-      }
       currentSymbolTable = new SymbolTable();
       currentHashIdentifiers = new Hashtable<String, String>();
       currentHashMethods = new Hashtable<String, Signature>();
