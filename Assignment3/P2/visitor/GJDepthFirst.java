@@ -43,7 +43,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     String plus = " PLUS ";
     String minus = " MINUS ";
     String times = " TIMES ";
-    String noop = "\n NOOP ";
+    String noop = " NOOP \n";
     String main = "\n MAIN \n";
     String error = "\n ERROR ";
     String call = "\n CALL ";
@@ -119,7 +119,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         }
         public String getVariable(String name, String key) {
             if(variableSymbolTable.containsKey(key))
-                return (R) name + "_" + key + "_" + name.length();
+                return  name + "_" + key + "_" + name.length();
             else if(!parent.equals("main"))
                 return global.get(parent).getVariable(parent, key);
             return "";
@@ -130,6 +130,14 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
                 return name + "_" + key + "_" + name.length();
             else if(!parent.equals("main"))
                 return global.get(parent).getMethod(parent, key);
+            return "";
+        }
+
+        public String getVariableType(String key) {
+        	if(variableSymbolTable.containsKey(key))
+                return  variableSymbolTable.get(key);
+            else if(!parent.equals("main"))
+                return global.get(parent).getVariableType(key);
             return "";
         }
 
@@ -220,7 +228,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         public String init(int lastUsedTemp, int lastUsedLabel) {
             String newInit = begin;
             newInit += move + temp(lastUsedTemp) + hallocate + vtable.size()*4 + "\n";
-            newInit += move + temp(lastUsedTemp) + hallocate + (fields.size()+1)*4 + "\n";
+            newInit += move + temp(lastUsedTemp + 1) + hallocate + (fields.size()+1)*4 + "\n";
             newInit += methodInit(lastUsedTemp);
             newInit += fieldInit(lastUsedTemp, lastUsedLabel);
             newInit += ret + temp(lastUsedTemp + 1);
@@ -247,7 +255,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             String iterator = temp(lastUsedTemp + 2);
             String labelStart = label(lastUsedLabel);
             String labelEnd = label(lastUsedLabel + 1);
-            String fieldInits = move + iterator + " 4";
+            String fieldInits = move + iterator + " 4\n";
             String fieldSize = " " + fields.size()*4 + " ";
             fieldInits += labelStart;
             fieldInits += cjump + lt + iterator + fieldSize + labelEnd;
