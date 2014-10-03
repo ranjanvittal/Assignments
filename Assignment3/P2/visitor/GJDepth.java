@@ -474,11 +474,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
         temp1 = currentCompressedTable.fieldOffset(name);
         printValue += hload + array + temp(0) + " " + temp1.intValue() + " ";
       }
+      String size1 = temp(lastUsedTemp++);
       String size = temp(lastUsedTemp++);
       String index = temp(lastUsedTemp++);
       String offset = temp(lastUsedTemp++);
       String labelStart = label(lastUsedLabel++);
-      printValue += hload + size + array + " 0 ";
+      printValue += hload + size1 + array + " 0 ";
+      printValue += move + size + plus + times + size1 + " 4 4";
       printValue += move + index;
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
@@ -701,7 +703,6 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
        printValue += move + offset1;
        n.f2.accept(this, argu);
        printValue += move + offset + plus + times + offset1 + " 4 4 ";
-       printValue += print + offset;
        printValue += hload +  loaded +  plus + array + offset + " 0 \n";
        String labelStart = label(lastUsedLabel++);
        printValue += hload + maxSize1 + array + " 0 \n";

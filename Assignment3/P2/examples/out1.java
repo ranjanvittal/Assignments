@@ -131,13 +131,15 @@ class BS{
 	number = new int[sz] ;
 	j = 1 ;
 	k = size + 1 ;
+
 	while (j < (size)) {
 	    aux01 = 2 * j ;
 	    aux02 = k - 3 ;
+        aux02 = aux01 + aux02;
         //System.out.println(j);
         //System.out.println(99090);
         //System.out.println(size);
-	    number[j] = aux01 + aux02 ;
+	    number[j] = aux02;
 	    j = j + 1 ;
 	    k = k - 1 ;
 	}
