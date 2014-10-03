@@ -1,0 +1,18 @@
+java P2 < check/out1.java > out1.miniIR;
+java P2 < check/out2.java > out2.miniIR;
+java P2 < check/out3.java > out3.miniIR;
+java P2 < check/out4.java > out4.miniIR;
+java P2 < check/out5.java > out5.miniIR;
+java P2 < check/out6.java > out6.miniIR;
+java P2 < check/out7.java > out7.miniIR;
+java P2 < check/out8.java > out8.miniIR;
+java P2 < check/out9.java > out9.miniIR;
+java -jar pgi.jar < out1.miniIR;
+java -jar pgi.jar < out2.miniIR;
+java -jar pgi.jar < out3.miniIR;
+java -jar pgi.jar < out4.miniIR;
+java -jar pgi.jar < out5.miniIR;
+java -jar pgi.jar < out6.miniIR;
+java -jar pgi.jar < out7.miniIR;
+java -jar pgi.jar < out8.miniIR;
+java -jar pgi.jar < out9.miniIR;

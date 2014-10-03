@@ -36,22 +36,22 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    }
 
 
-  void makeArray(int arraytemp, int expressiontemp) {
-    String expression = temp(expressiontemp);
-    String array = temp(arraytemp);
-	  printValue += move + array + hallocate + times + " 4 " + plus + expression + " 1 \n";
-	  String iterator = temp(lastUsedTemp++);
-    printValue += move + iterator + " 4 \n";
-    String labelStart = label(lastUsedLabel++);
-    String labelEnd = label(lastUsedLabel++);
-    printValue += labelStart + cjump + lt + iterator + times + plus + expression + " 1 4 " + labelEnd + "\n";
-    printValue += hstore + plus + array + iterator + " 0 0 \n";
-    printValue += move + iterator + plus + iterator + " 4 \n";
-    printValue += jump + labelStart + "\n";
-    printValue += labelEnd + hstore + array + " 0 " + times + expression + " 4 \n";
-    printValue += ret + array + "\n";
-    printValue += end;
-  }
+  // void makeArray(int arraytemp, int expressiontemp) {
+  //   String expression = temp(expressiontemp);
+  //   String array = temp(arraytemp);
+	 //  printValue += move + array + hallocate + times + " 4 " + plus + expression + " 1 \n";
+	 //  String iterator = temp(lastUsedTemp++);
+  //   printValue += move + iterator + " 4 \n";
+  //   String labelStart = label(lastUsedLabel++);
+  //   String labelEnd = label(lastUsedLabel++);
+  //   printValue += labelStart + cjump + lt + iterator + times + plus + expression + " 1 4 " + labelEnd + "\n";
+  //   printValue += hstore + plus + array + iterator + " 0 0 \n";
+  //   printValue += move + iterator + plus + iterator + " 4 \n";
+  //   printValue += jump + labelStart + "\n";
+  //   printValue += labelEnd + hstore + array + " 0 " + times + expression + " 4 \n";
+  //   printValue += ret + array + "\n";
+  //   printValue += end;
+  // }
 
   // void makeLookup(String arraytemp, String expressiontemp) {
   //     printValue += begin;
@@ -172,6 +172,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       n.f14.accept(this, argu);
       n.f15.accept(this, argu);
       n.f16.accept(this, argu);
+      printValue += end;
       return _ret;
    }
 
@@ -476,7 +477,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       String size = temp(lastUsedTemp++);
       String index = temp(lastUsedTemp++);
       String offset = temp(lastUsedTemp++);
-      String labelStart = temp(lastUsedLabel++);
+      String labelStart = label(lastUsedLabel++);
       printValue += hload + size + array + " 0 ";
       printValue += move + index;
       n.f1.accept(this, argu);
@@ -531,7 +532,6 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       printValue += labelStart;
       n.f5.accept(this, argu);
       n.f6.accept(this, argu);
-      printValue += jump + labelEnd + "\n";
       printValue += labelEnd + noop;
       return _ret;
    }
@@ -693,16 +693,19 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
        printValue += move + array ;
        n.f0.accept(this, argu);
        n.f1.accept(this, argu);
+       String offset1 = temp(lastUsedTemp++);
        String offset = temp(lastUsedTemp++);
+       String maxSize1 = temp(lastUsedTemp++);
        String loaded = temp(lastUsedTemp++);
        String maxSize = temp(lastUsedTemp++);
-       printValue += move + offset;
+       printValue += move + offset1;
        n.f2.accept(this, argu);
-       printValue += hload +  loaded +  plus + array + plus;
-       printValue += times + offset;
-       printValue += " 4 0 \n";
+       printValue += move + offset + plus + times + offset1 + " 4 4 ";
+       printValue += print + offset;
+       printValue += hload +  loaded +  plus + array + offset + " 0 \n";
        String labelStart = label(lastUsedLabel++);
-       printValue += hload + maxSize + array + " 0 \n";
+       printValue += hload + maxSize1 + array + " 0 \n";
+       printValue += move + maxSize + plus + times + maxSize1 + " 4 4 \n";
        printValue += cjump + minus + " 1 " + lt + offset +  maxSize + labelStart;
        printValue += error;
        printValue += labelStart + noop;
@@ -931,12 +934,24 @@ public R visit(PrimaryExpression n, A argu) {
       n.f0.accept(this, argu);
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
-      int arraytemp = lastUsedTemp++;
-      int expressiontemp = lastUsedTemp++;
+      String array = temp(lastUsedTemp++);
+      String expression = temp(lastUsedTemp++);
+      String iterator = temp(lastUsedTemp++);
+      String labelStart = label(lastUsedLabel++);
+      String labelEnd = label(lastUsedLabel++);
       printValue += begin;
-      printValue += move + temp(expressiontemp) +"\n";
+      printValue += move + expression;
       n.f3.accept(this, argu);
-      makeArray(arraytemp, expressiontemp);
+      // makeArray(arraytemp, expressiontemp);
+      printValue += move + array + hallocate + times + " 4 " + plus + expression + " 1 \n";
+      printValue += move + iterator + " 4 \n";
+      printValue += labelStart + cjump + lt + iterator + times + plus + expression + " 1 4 " + labelEnd + "\n";
+      printValue += hstore + plus + array + iterator + " 0 0 \n";
+      printValue += move + iterator + plus + iterator + " 4 \n";
+      printValue += jump + labelStart + "\n";
+      printValue += labelEnd + hstore + array + " 0 " + expression + "\n";
+      printValue += ret + array + "\n";
+      printValue += end;
 //       if(exp.equals("int")){
 //           n.f4.accept(this, argu);
 //           return (R) "int[]";
