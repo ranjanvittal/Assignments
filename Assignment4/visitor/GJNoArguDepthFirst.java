@@ -14,6 +14,7 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
+   int max = 0;
    public R visit(NodeList n) {
       R _ret=null;
       int _count=0;
@@ -75,7 +76,8 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
       n.f2.accept(this);
       n.f3.accept(this);
       n.f4.accept(this);
-      return _ret;
+      max = max + 1;
+      return (R) new Integer(max);
    }
 
    /**
@@ -308,7 +310,11 @@ public class GJNoArguDepthFirst<R> implements GJNoArguVisitor<R> {
    public R visit(Temp n) {
       R _ret=null;
       n.f0.accept(this);
-      n.f1.accept(this);
+      String integer = n.f1.f0.toString();
+      int temp = Integer.parseInt(integer);
+      if(temp > max) {
+          max = temp;
+      }
       return _ret;
    }
 

@@ -26,7 +26,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    void println(String a) {
       System.out.println(a);
    }
-   int lastUsedTemp = 1000;
+   int lastUsedTemp;
    String move = "\n MOVE ";
    String hstore = "\n HSTORE ";
    String hallocate = " HALLOCATE ";
@@ -109,6 +109,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(Goal n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
+      lastUsedTemp = ((Integer) argu).intValue();
       printValue += main;
       n.f1.accept(this, argu);
       printValue += end;
@@ -124,7 +125,14 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     */
    public R visit(StmtList n, A argu) {
       R _ret=null;
-      Vector<R> stmtList = (Vector<R>) n.f0.accept(this, argu);
+      //Vector<R> stmtList = (Vector<R>) n.f0.accept(this, argu);
+      Enumeration<Node> stmtList= n.f0.elements();
+      while(stmtList.hasMoreElements()) {
+          NodeSequence stmt = (NodeSequence) stmtList.nextElement();
+          Node possibleLabel = stmt.elementAt(0);
+          printValue += (String) possibleLabel.accept(this, argu);
+          stmt.elementAt(1).accept(this, argu);
+      }
       //if(stmtList.size() != 0)
       //printValue += (String) stmtList.remove(0);
       return _ret;
@@ -147,6 +155,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       printValue += begin;
       String retExpression = (String) n.f4.accept(this, argu);
       printValue += ret + retExpression + "\n";
+      printValue += end;
       return _ret;
    }
 
