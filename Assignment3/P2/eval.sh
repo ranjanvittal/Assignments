@@ -1,7 +1,8 @@
+javac P3.java;
 for i in examples/*.java;
 do
 #echo $i;
-	java P2 < $i > tempfile;
+	java P3 < $i > tempfile;
 	java -jar pgi.jar < tempfile > tmpoutput;
 	cd examples/;
 	j=`echo $i | sed 's/\([^\/]*\/\)\(.*\)/\2/'`;

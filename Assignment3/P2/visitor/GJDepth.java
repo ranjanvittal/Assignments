@@ -243,8 +243,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       String type = (String) n.f0.accept(this, argu);
       String name = (String) n.f1.accept(this, argu);
       if(!inClass) {
-          currentIdentifiers.put(name, new Integer(lastUsedTemp));
-          printValue += move + temp(lastUsedTemp++) + "0\n";
+          currentIdentifiers.put(name, new Integer(lastUsedTemp++));
+          //printValue += move + temp(lastUsedTemp++) + "0\n";
       }
       n.f2.accept(this, argu);
       return _ret;
@@ -531,7 +531,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       printValue += jump + labelEnd + "\n";
-      printValue += labelStart;
+      printValue += labelStart + noop;
       n.f5.accept(this, argu);
       n.f6.accept(this, argu);
       printValue += labelEnd + noop;

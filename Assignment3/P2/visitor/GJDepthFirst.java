@@ -256,7 +256,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
             String labelStart = label(lastUsedLabel);
             String labelEnd = label(lastUsedLabel + 1);
             String fieldInits = move + iterator + " 4\n";
-            String fieldSize = " " + fields.size()*4 + " ";
+            String fieldSize = " " + (fields.size() + 1)*4 + " ";
             fieldInits += labelStart;
             fieldInits += cjump + lt + iterator + fieldSize + labelEnd;
             fieldInits += hstore + plus + classInit  + iterator + " 0 0";
