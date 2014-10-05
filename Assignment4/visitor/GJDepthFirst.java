@@ -289,6 +289,16 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     *       | Label()
     */
    public R visit(Exp n, A argu) {
+      if(n.f0.which == 5) {
+          String retTemp = temp(lastUsedTemp++);
+          printValue += move + retTemp + (String) n.f0.accept(this, argu) + "\n";
+          return (R) retTemp;
+      }
+      if(n.f0.which == 6) {
+          String retTemp = temp(lastUsedTemp++);
+          printValue += move + retTemp + (String) n.f0.accept(this, argu) + "\n";
+          return (R) retTemp;
+      }
       return n.f0.accept(this, argu);
    }
 
