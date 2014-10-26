@@ -11,11 +11,42 @@ import java.util.*;
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
  */
+
+
+
 public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		String currentMethod;
+		int startStmtCount = 0;
 		Hashtable<String, Hashtable<Integer, Successors>> succForMethod = new Hashtable<String, Hashtable<Integer, Successors>>();
 		Hashtable<String, Hashtable<Integer, Set<Integer>>> useForMethod = new Hashtable<String, Hashtable<Integer, Set<Integer>>>();
 		Hashtable<String, Hashtable<Integer, Integer>> defForMethod = new Hashtable<String, Hashtable<Integer, Integer>>();
+		Hashtable<String, Hashtable< Integer, Range>> liveRangeForMethod = new Hashtable<String, Hashtable<Integer, Range>>();
+		Hashtable<String, Integer> argumentCount = new Hashtable<String, Integer>();
+		Hashtable<Integer, Range> liveRange;
+		ArrayList<TempBegin> active;
+		Hashtable<Integer, Integer> spilledArg;
+		ArrayList<String> freeList;
+		Hashtable<Integer, String> registerAllocated;
+		int spillCount;
+		Hashtable<String, Hashtable<Integer, String>> allocateForMethod = new Hashtable<String, Hashtable<Integer, String>>();
+		Hashtable<String, Hashtable<Integer, Integer>> spillForMethod = new Hashtable<String, Hashtable<Integer, Integer>>();
+		
+		class TempBegin implements Comparator<TempBegin>, Comparable<TempBegin>{
+			   int temp;
+			   int begin;
+			   int end;
+			   // Overriding the compareTo method
+			   public int compareTo(TempBegin d){
+			      return (this.begin) - (d.begin);
+			   }
+
+			   // Overriding the compare method to sort the age 
+			   public int compare(TempBegin d, TempBegin d1){
+			      return d.end - d1.end;
+			   }
+			}
+
+		List<TempBegin> tempBegin;
 //
    // Auto class visitors--probably don't need to be overridden.
    //
@@ -56,14 +87,16 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     		print(c + " : " + s);
     	}
     }
-    public void makeInsAndOuts (String method) {
-       for(int i = 1; i <= stmtCount; i++) {
+    public void makeInsAndOuts () {
+       liveIn = new Hashtable<Integer, Set<Integer>>();
+       liveOut = new Hashtable<Integer, Set<Integer>>();			
+       for(int i = startStmtCount; i < stmtCount; i++) {
           liveIn.put(new Integer(i), new HashSet<Integer>());
           liveOut.put(new Integer(i), new HashSet<Integer>());
        }
        for(;;) {
           int overall_diff = 0;
-          for(int i = 1; i <= stmtCount; i++) {
+          for(int i = startStmtCount; i < stmtCount; i++) {
             Integer stmt = new Integer(i);
             int inCt = num_elem(liveIn.get(stmt));
             int outCt = num_elem(liveOut.get(stmt));
@@ -71,12 +104,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
             Set<Integer> makingIn = new HashSet<Integer>();
             Set<Integer> makingOut = new HashSet<Integer>();
             Set<Integer> currentUses = uses.get(stmt);
-            
+            //print(stmt);
+            //print(currentUses);
             Successors successors = succ.get(stmt);
             makingIn.addAll(outI);
             makingIn.remove(def.get(stmt));
             makingIn.addAll(currentUses);
-
+            //print("here");
             liveIn.put(stmt, makingIn);
 
             overall_diff += num_elem(makingIn) - inCt;
@@ -85,7 +119,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
                 makingOut.addAll(liveIn.get(successors.first));
             }
 
-            if(successors.first != null) {
+            if(successors.second != null) {
                 makingOut.addAll(liveIn.get(successors.second));
             }
             overall_diff += num_elem(makingOut) - outCt;
@@ -94,10 +128,120 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
         if(overall_diff == 0)
           break;
       }
-      printhash(liveIn);
-      printhash(liveOut);
-
+      makeLiveRange();
    }
+    
+   public void makeLiveRange(){
+	   liveRange = new Hashtable<Integer, Range>();
+	   int count = argumentCount.get(currentMethod);
+	   for(int i = startStmtCount; i < stmtCount; i++) {
+		   int definition = def.get(i);
+		   if(definition != -1) {
+			   if(!liveRange.containsKey(definition)) {
+				   Range a = new Range();
+				   a.begin = i;
+				   liveRange.put(definition, a);
+			   }
+		   }
+	   }
+	   for(int i = startStmtCount; i < stmtCount; i++) {
+		   Iterator it = liveIn.get(i).iterator();
+		   while(it.hasNext()) {
+			   int k = (Integer) it.next();
+			   if(k >= count) {
+				   liveRange.get(k).end = i;
+			   }
+		   }
+	   }
+	   
+	   liveRangeForMethod.put(currentMethod, liveRange);
+	   print(currentMethod);
+	   //printLiveRange(liveRange);
+	   makeRange();
+	   allocateRegister();
+	   //printAllocated(registerAllocated);
+	   print("printing spilled args");
+	   Enumeration e = spilledArg.keys();
+	   for(int i = 0 ; i < spilledArg.size(); i++) {
+		   Integer key = (Integer) e.nextElement();
+		   print(key + " : " + spilledArg.get(key));
+	   }
+	   allocateForMethod.put(currentMethod, registerAllocated);
+	   spillForMethod.put(currentMethod, spilledArg);
+   }
+   public void makeRange() {
+	   Enumeration name = liveRange.keys();
+	   tempBegin = new ArrayList<TempBegin>();
+	   int k = 0;
+	   while(name.hasMoreElements()) {
+		   Integer elem = (Integer) name.nextElement();
+		   TempBegin a = new TempBegin();
+		   a.temp = elem;
+		   a.begin = liveRange.get(elem).begin;
+		   a.end = liveRange.get(elem).end;
+		   tempBegin.add(a);
+	   }
+	   Collections.sort(tempBegin);//sorting on begin
+//	   for(int i = 0;i < tempBegin.size(); i++) {
+//		   print(tempBegin.get(i).temp + " : " + tempBegin.get(i).begin + " " + tempBegin.get(i).end);
+//	   }
+	   
+   }
+   public void allocateRegister() {
+	   active = new ArrayList<TempBegin>();
+	   spilledArg = new Hashtable<Integer, Integer>();
+	   spillCount = 0;
+	   registerAllocated = new Hashtable<Integer, String>();
+	   freeList = new ArrayList<String>();
+	   freeList.add("t0");
+	   freeList.add("t1");
+	   freeList.add("t2");
+	   freeList.add("t3");
+	   freeList.add("t4");
+	   freeList.add("t5");
+	   freeList.add("t6");
+	   freeList.add("t7");
+   		for(int i = 0;i < tempBegin.size(); i++) {
+   			expireOldIntervals(tempBegin.get(i));
+   			if(active.size() == 8) {
+   				spillAtInterval(tempBegin.get(i));
+   			}
+   			else {
+   					active.add(tempBegin.get(i));
+   					registerAllocated.put(tempBegin.get(i).temp, freeList.remove(0));
+  					Collections.sort(active, new TempBegin());
+				}
+     		}
+	}
+   
+   public void expireOldIntervals(TempBegin i) {
+	   for(int j = 0;j < active.size(); j++) {
+		   if(active.get(j).end >= i.begin) return;
+		   TempBegin t = active.remove(j);
+		   freeList.add(0, registerAllocated.get(t.temp));
+	   }
+   }
+   
+   public void spillAtInterval(TempBegin i) {
+           TempBegin spill = active.get(active.size()-1);
+           if(spill.end > i.end) {
+           //register[i] ← register[spill]
+//        	   print(spill.temp);
+//        	   System.out.println(registerAllocated.containsKey(spill.temp));
+        	   registerAllocated.put(i.temp, registerAllocated.get(spill.temp));
+        	   registerAllocated.remove(spill.temp);
+        	   spilledArg.put(spill.temp, spillCount++);
+        	   active.remove(active.size()-1);
+        	   active.add(i);
+        	   Collections.sort(active, new TempBegin());
+       	   //remove spill from active
+       	   //add i to active, sorted by increasing end point
+           }
+       	   else {
+       		spilledArg.put(i.temp, spillCount++);
+       	   }
+      }
+   
    public R visit(NodeList n, A argu) {
       R _ret=null;
       int _count=0;
@@ -160,8 +304,14 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       n.f1.accept(this, argu);
       n.f2.accept(this, argu);
       stmtCount++;
+      argumentCount.put(currentMethod,  0);
+      makeInsAndOuts();
+      succForMethod.put(currentMethod, succ);
+      defForMethod.put(currentMethod, def);
+      useForMethod.put(currentMethod, uses);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
+      
       return _ret;
    }
 
@@ -176,13 +326,13 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       //liveOut = new Hashtable<Integer, Set<Integer>>();
       def = new Hashtable<Integer, Integer>();
       succ = new Hashtable<Integer, Successors>();
+      startStmtCount = stmtCount + 1;
       n.f0.accept(this, argu);
-      printSucc(succ);
-      printDef(def);
-      printUse(uses);
-      succForMethod.put(currentMethod, succ);
-      defForMethod.put(currentMethod, def);
-      useForMethod.put(currentMethod, uses);
+      //printSucc(succ);
+      //printDef(def);
+      //printUse(uses);
+      
+      
       return _ret;
    }
 
@@ -195,15 +345,51 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     */
    public R visit(Procedure n, A argu) {
       R _ret=null;
-      currentMethod = (String) n.f0.accept(this, argu);
       stmtCount++;
+      currentMethod = (String) n.f0.accept(this, argu);
+      
+      
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      Integer i  = (Integer) n.f2.accept(this, argu);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
+      argumentCount.put(currentMethod,  i);
+      makeInsAndOuts();
+      succForMethod.put(currentMethod, succ);
+      defForMethod.put(currentMethod, def);
+      useForMethod.put(currentMethod, uses);
+      
       return _ret;
    }
 
+   /**
+    * f0 -> "BEGIN"
+    * f1 -> StmtList()
+    * f2 -> "RETURN"
+    * f3 -> SimpleExp()
+    * f4 -> "END"
+    */
+   public R visit(StmtExp n, A argu) {
+      R _ret=null;
+      n.f0.accept(this, argu);
+      stmtCount++;
+      n.f1.accept(this, argu);
+      n.f2.accept(this, argu);
+      stmtCount++;
+      Integer a = (Integer) n.f3.accept(this, argu);
+      n.f4.accept(this, argu);
+      Set<Integer> use = new HashSet<Integer>();
+      if( a != -1) {
+    	  use.add(a);
+      }
+      succ.get(stmtCount-1).second = stmtCount;
+      uses.put(stmtCount, use);
+      def.put(stmtCount, minusOne);
+      succ.put(stmtCount, new Successors());
+      stmtCount++;
+      return _ret;
+   }
+   
    /**
     * f0 -> NoOpStmt()
     *       | ErrorStmt()
@@ -227,6 +413,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       startFlag = false;
       return _ret;
    }
+   
+
 
    /**
     * f0 -> "NOOP"
@@ -324,13 +512,12 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       R _ret=null;
       n.f0.accept(this, argu);
       Set<Integer> use = new HashSet<Integer>(); 
-      use.add((Integer) n.f1.accept(this, argu));
+      def.put(stmtCount, (Integer) n.f1.accept(this, argu));
       use.add((Integer) n.f2.accept(this, argu));
       n.f3.accept(this, argu);
       Successors s = new Successors();
       succ.put(stmtCount, s);
       uses.put(stmtCount, use);
-      def.put(stmtCount, minusOne);
       return _ret;
    }
 
@@ -387,25 +574,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       return (R) use;
    }
 
-   /**
-    * f0 -> "BEGIN"
-    * f1 -> StmtList()
-    * f2 -> "RETURN"
-    * f3 -> SimpleExp()
-    * f4 -> "END"
-    */
-   public R visit(StmtExp n, A argu) {
-      R _ret=null;
-      n.f0.accept(this, argu);
-      stmtCount++;
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      stmtCount++;
-      n.f3.accept(this, argu);
-      n.f4.accept(this, argu);
-      stmtCount++;
-      return _ret;
-   }
+
 
    /**
     * f0 -> "CALL"
@@ -426,7 +595,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       n.f2.accept(this, argu);
       Vector<Node> b = n.f3.nodes;
       int i = 0;
-      while(i<b.size()) {
+      while(i < b.size()) {
     	  use.add((Integer) b.elementAt(i).accept(this, argu));
     	  i++;
       }

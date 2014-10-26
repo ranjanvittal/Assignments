@@ -26,6 +26,12 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     boolean startFlag;
     Integer minusOne = new Integer(-1);
     int stmtCount = 0;
+    
+    public class Range extends Object{
+		int begin;
+		int end;
+	}
+    
     public int num_elem(Set<Integer> a) {
     	return a.size();
     }
@@ -49,11 +55,43 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     	Integer stmt;
     	while(names.hasMoreElements()) {
     		stmt = (Integer) names.nextElement();
-    		print(stmt + " : \n");
+    		print("");
+    		print(stmt + " : ");
     		print(a.get(stmt));
     	}
+    	print("");
     }
    
+    public void printLiveRange(Hashtable<Integer, Range> a) {
+    	int i;
+    	Enumeration names  = a.keys();
+    	Integer stmt;
+    	while(names.hasMoreElements()) {
+    		stmt = (Integer) names.nextElement();
+    		print("");
+    		print(stmt + " : ");
+    		print(a.get(stmt));
+    	}
+    	print("");
+    }
+    
+    public void printAllocated(Hashtable<Integer, String> a) {
+    	int i;
+    	Enumeration names  = a.keys();
+    	Integer temp;
+    	while(names.hasMoreElements()) {
+    		temp = (Integer) names.nextElement();
+    		print("");
+    		print(temp + " : ");
+    		print(a.get(temp));
+    	}
+    	print("");
+    }
+    
+    public void print(Range a) {
+    	print("begin : " + a.begin);
+    	print("end : " + a.end);
+    }
     public void print(Set<Integer> a) {
     	Iterator i = a.iterator();
     	while(i.hasNext()) {
