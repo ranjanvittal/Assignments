@@ -109,7 +109,7 @@ public R visit(NodeList n, A argu) {
    }
 
    public void astore(Hashtable<Integer, String> savedRegisters, int argCount) {
-	// TODO Auto-generated method stub
+	   printIntString(savedRegisters);
 	   int size = savedRegisters.size();
 	   print(size);
 	   int i = 0;
@@ -118,13 +118,12 @@ public R visit(NodeList n, A argu) {
 		   ct = argCount - 3;
 	   }
 	   while(i < size) {
-		   printValue += "ASTORE SPILLED ARG" + ct++ + "s" + i + "\n";
+		   printValue += "ASTORE SPILLED ARG " + ct++ + " s" + i + "\n";
 		   i++;
 	   }
    }
 
    public void aload(Hashtable<Integer, String> savedRegisters, int argCount) {
-		// TODO Auto-generated method stub
 		   int size = savedRegisters.size();
 		   int i = 0;
 		   int ct = 0;
@@ -132,7 +131,7 @@ public R visit(NodeList n, A argu) {
 			   ct = argCount - 3;
 		   }
 		   while(i < size) {
-			   printValue += "ALOAD " + "s" + i + "SPILLED ARG" + ct++ + "\n";
+			   printValue += "ALOAD " + "s" + i + " SPILLED ARG " + ct++ + "\n";
 			   i++;
 		   }
 	}
@@ -174,6 +173,9 @@ public R visit(NodeList n, A argu) {
       int firstArgu = argumentCount.get(currentMethod);
       int secondArgu = stackSlots.get(currentMethod);
       int thirdArgu = thirdArgumentForMethods.get(currentMethod);
+      registerAllocated = allocateForMethod.get(currentMethod);
+      spilledArg = spillForMethod.get(currentMethod);
+      savedRegisters = savedRegistersForMethod.get(currentMethod);
       printValue += currentMethod + "[" + firstArgu + "][" + secondArgu + "][" + thirdArgu + "]\n"; 
       n.f2.accept(this, argu);
       n.f3.accept(this, argu);
@@ -218,7 +220,26 @@ public R visit(NodeList n, A argu) {
       printValue += "ERROR\n";
       return _ret;
    }
-
+   public String getOneTempForUse(int temp, boolean fl) {
+	   if(registerAllocated.containsKey(temp)) {
+		   return registerAllocated.get(temp);
+	   }
+	   else if(savedRegisters.containsKey(temp)) {
+		   return savedRegisters.get(temp);
+	   }
+	   else {
+		   if(fl) {
+			   printValue += " ALOAD v1 SPILLED ARG " + spilledArg.get(temp) + "\n";
+			   return "v1";
+		   }
+		   else {
+			   printValue += " ALOAD v0 SPILLED ARG " + spilledArg.get(temp) + "\n";
+			   return "v0";
+		   }
+			   
+	   }
+		   
+   }
    /**
     * f0 -> "CJUMP"
     * f1 -> Temp()
@@ -228,8 +249,9 @@ public R visit(NodeList n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
       int temp = (Integer) n.f1.accept(this, argu);
-      
-      n.f2.accept(this, argu);
+      String reg = getOneTempForUse(temp, true);
+      String label = (String) n.f2.accept(this, argu);
+      printValue += " CJUMP " + reg + " " + label + " " +  "\n";
       return _ret;
    }
 
@@ -253,9 +275,24 @@ public R visit(NodeList n, A argu) {
    public R visit(HStoreStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
+      int temp1 = (Integer) n.f1.accept(this, argu);
+      int offset = (Integer) n.f2.accept(this, argu);
+      int temp2 = (Integer) n.f3.accept(this, argu);
+      String reg1 = getOneTempForUse(temp1, true);
+      String reg2;
+      if(reg1 == "v1") {
+    	  reg2 = getOneTempForUse(temp2, false);
+      }
+      else {
+    	  reg2 = getOneTempForUse(temp2, true);
+      }
+      printValue += " HSTORE " + reg1 + " " + offset + " " + reg2 + "\n";
+//      if(reg1 == "v1") {
+//    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
+//      }
+//      if(reg2 == "v1" || reg2 == " v0") {
+//    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp2) + " " + reg2 + "\n";
+//      }
       return _ret;
    }
 
@@ -266,13 +303,30 @@ public R visit(NodeList n, A argu) {
     * f3 -> IntegerLiteral()
     */
    public R visit(HLoadStmt n, A argu) {
-      R _ret=null;
-      n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      n.f3.accept(this, argu);
-      return _ret;
-   }
+	   R _ret=null;
+	   n.f0.accept(this, argu);
+	   int temp1 = (Integer) n.f1.accept(this, argu);
+	   int temp2 = (Integer) n.f2.accept(this, argu);
+	   int offset = (Integer) n.f3.accept(this, argu);
+	   String reg1 = getOneTempForUse(temp1, true);
+	   String reg2;
+	   if(reg1 == "v1") {
+		   reg2 = getOneTempForUse(temp2, false);
+	   }		
+	   else {
+		   reg2 = getOneTempForUse(temp2, true);
+	   }
+	   
+	   printValue += " HLOAD " + reg1 + " " + reg2 + " " + offset + "\n";
+	   
+	   if(reg1 == "v1") {
+	       printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
+	   }
+//	   if(reg2 == "v1" || reg2 == " v0") {
+//	       printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp2) + " " + reg2 + "\n";
+//	   }
+	   return _ret;
+   	}
 
    /**
     * f0 -> "MOVE"
