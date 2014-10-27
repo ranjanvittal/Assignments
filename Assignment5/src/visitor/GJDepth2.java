@@ -110,7 +110,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
       arg2.stackSlots = arg.stackSlots;
       arg2.thirdArgumentForMethods = thirdArgumentForMethods;
       
-      printAllFromDepth2(arg2);
+      //printAllFromDepth2(arg2);
       return (R) arg2;
    }
 
