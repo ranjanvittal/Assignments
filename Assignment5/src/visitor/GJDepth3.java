@@ -89,6 +89,7 @@ public R visit(NodeList n, A argu) {
 	  this.stackSlots = required.stackSlots;
       n.f0.accept(this, argu);
       currentMethod = "main";
+      
       int firstArgu = argumentCount.get(currentMethod);
       int secondArgu = stackSlots.get(currentMethod);
       int thirdArgu = thirdArgumentForMethods.get(currentMethod);
@@ -100,7 +101,7 @@ public R visit(NodeList n, A argu) {
       stmtCount++;
       n.f1.accept(this, argu);
       aload(savedRegisters, firstArgu);
-      printValue += " END\n";
+      printValue += "\t" + "END\n";
       n.f2.accept(this, argu);
       stmtCount++;
       n.f3.accept(this, argu);
@@ -110,16 +111,16 @@ public R visit(NodeList n, A argu) {
    }
 
    public void astore(Hashtable<Integer, String> savedRegisters, int argCount) {
-	   printIntString(savedRegisters);
+	   //printIntString(savedRegisters);
 	   int size = savedRegisters.size();
-	   print(size);
+	   
 	   int i = 0;
 	   int ct = 0;
 	   if(argCount > 4) {
 		   ct = argCount - 3;
 	   }
 	   while(i < size) {
-		   printValue += "ASTORE SPILLED ARG " + ct++ + " s" + i + "\n";
+		   printValue += "\t" + "ASTORE SPILLED ARG " + ct++ + " s" + i + "\n";
 		   i++;
 	   }
    }
@@ -132,7 +133,7 @@ public R visit(NodeList n, A argu) {
 			   ct = argCount - 3;
 		   }
 		   while(i < size) {
-			   printValue += "ALOAD " + "s" + i + " SPILLED ARG " + ct++ + "\n";
+			   printValue += "\t" + "ALOAD " + "s" + i + " SPILLED ARG " + ct++ + "\n";
 			   i++;
 		   }
 	}
@@ -183,7 +184,7 @@ public R visit(NodeList n, A argu) {
       astore(savedRegisters, firstArgu);
       n.f4.accept(this, argu);
       aload(savedRegisters, firstArgu);
-      printValue += "END\n";
+      printValue += "\t" + "END\n";
       return _ret;
    }
 
@@ -209,7 +210,7 @@ public R visit(NodeList n, A argu) {
    public R visit(NoOpStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      printValue += " NOOP\n";
+      printValue += "\t" + "NOOP\n";
       return _ret;
    }
 
@@ -219,7 +220,7 @@ public R visit(NodeList n, A argu) {
    public R visit(ErrorStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      printValue += " ERROR\n";
+      printValue += "\t" + "ERROR\n";
       return _ret;
    }
    
@@ -232,11 +233,11 @@ public R visit(NodeList n, A argu) {
 	   }
 	   else {
 		   if(fl) {
-			   printValue += " ALOAD v1 SPILLED ARG " + spilledArg.get(temp) + "\n";
+			   printValue += "\t" + " ALOAD v1 SPILLED ARG " + spilledArg.get(temp) + "\n";
 			   return "v1";
 		   }
 		   else {
-			   printValue += " ALOAD v0 SPILLED ARG " + spilledArg.get(temp) + "\n";
+			   printValue += "\t" + " ALOAD v0 SPILLED ARG " + spilledArg.get(temp) + "\n";
 			   return "v0";
 		   }
 			   
@@ -254,7 +255,7 @@ public R visit(NodeList n, A argu) {
       int temp = (Integer) n.f1.accept(this, argu);
       String reg = getOneTempForUse(temp, true);
       String label = (String) n.f2.accept(this, argu);
-      printValue += " CJUMP " + reg + " " + label + " " +  "\n";
+      printValue += "\t" +  "CJUMP " + reg + " " + label + " " +  "\n";
       return _ret;
    }
 
@@ -265,7 +266,7 @@ public R visit(NodeList n, A argu) {
    public R visit(JumpStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      printValue += "JUMP " + (String) n.f1.accept(this, argu) + "\n";
+      printValue += "\t" + "JUMP " + (String) n.f1.accept(this, argu) + "\n";
       return _ret;
    }
 
@@ -289,12 +290,12 @@ public R visit(NodeList n, A argu) {
       else {
     	  reg2 = getOneTempForUse(temp2, true);
       }
-      printValue += " HSTORE " + reg1 + " " + offset + " " + reg2 + "\n";
+      printValue += "\t" + "HSTORE " + reg1 + " " + offset + " " + reg2 + "\n";
 //      if(reg1 == "v1") {
-//    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
+//    	  printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
 //      }
 //      if(reg2 == "v1" || reg2 == " v0") {
-//    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp2) + " " + reg2 + "\n";
+//    	  printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp2) + " " + reg2 + "\n";
 //      }
       return _ret;
    }
@@ -323,13 +324,13 @@ public R visit(NodeList n, A argu) {
 	   
 	   
 	   if(reg1 == "v1") {
-	       printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
+	       printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
 	   }
 	   else {
-		   printValue += " HLOAD " + reg1 + " " + reg2 + " " + offset + "\n";
+		   printValue += "\t" + "HLOAD " + reg1 + " " + reg2 + " " + offset + "\n";
 	   }
 //	   if(reg2 == "v1" || reg2 == " v0") {
-//	       printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp2) + " " + reg2 + "\n";
+//	       printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp2) + " " + reg2 + "\n";
 //	   }
 	   return _ret;
    	}
@@ -346,12 +347,12 @@ public R visit(NodeList n, A argu) {
       if(n.f2.f0.which == 3) {
     	  String t = (String) n.f2.accept(this, argu);
     	  if(spilledArg.containsKey(temp)) {
-    		  printValue += " MOVE v1 " + t + "\n";
-    		  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp) + " v1 " + "\n";
+    		  printValue += "\t" + "MOVE v1 " + t + "\n";
+    		  printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp) + " v1 " + "\n";
     	  }
     	  else {
     		  String reg1 = getOneTempForUse(temp, true);
-    		  printValue += " MOVE " + reg1 + " " + t + "\n"; 
+    		  printValue += "\t" + "MOVE " + reg1 + " " + t + "\n"; 
     	  }
       }
       else
@@ -366,8 +367,9 @@ public R visit(NodeList n, A argu) {
     */
    public R visit(PrintStmt n, A argu) {
       R _ret=null;
-      String reg = (String) n.f0.accept(this, argu);
-      printValue += " PRINT " + reg + "\n";
+      n.f0.accept(this, argu);
+      String reg = (String) n.f1.accept(this, argu);
+      printValue += "\t" + "PRINT  " + reg + "\n";
       return _ret;
    }
 
@@ -397,7 +399,7 @@ public R visit(NodeList n, A argu) {
       n.f2.accept(this, argu);
       stmtCount++;
       String reg = (String) n.f3.accept(this, argu);
-      printValue += " MOVE v0 " + reg + "\n";
+      printValue += "\t" + "MOVE v0 " + reg + "\n";
       n.f4.accept(this, argu);
       stmtCount++;
       return _ret;
@@ -422,26 +424,26 @@ public R visit(NodeList n, A argu) {
       while(i < size && i<4) {
     	  int temp2 = (Integer) a.elementAt(i).accept(this, argu);
     	  String reg = getOneTempForUse(temp2, true);
-    	  printValue += " MOVE a" + i + " " + reg + "\n";
+    	  printValue += "\t" + "MOVE a" + i + " " + reg + "\n";
     	  i++;
       }
       int k = 1;
       while( i < size) {
     	  int temp2 = (Integer) a.elementAt(i).accept(this, argu);
     	  String reg = getOneTempForUse(temp2, true);
-    	  printValue += " PASSARG " + k + reg + "\n";
+    	  printValue += "\t" + " PASSARG " + k + reg + "\n";
     	  i++;
     	  k++;
       }
       String reg = (String) n.f1.accept(this, argu);
-      printValue += " CALL " + reg + "\n";
+      printValue += "\t" +  "CALL " + reg + "\n";
       n.f4.accept(this, argu);
       if(spilledArg.containsKey(temp)) {
-    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp) + " v0 " + "\n";
+    	  printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp) + " v0 " + "\n";
       }
       else {
     	  String reg1 = getOneTempForUse(temp, true);
-    	  printValue += " MOVE " + reg1 + " " + "v0" + "\n"; 
+    	  printValue += "\t" + "MOVE " + reg1 + " " + "v0" + "\n"; 
       }
       return _ret;
    }
@@ -456,11 +458,11 @@ public R visit(NodeList n, A argu) {
       String reg = (String) n.f1.accept(this, argu);
       int temp = (Integer) argu;
       if(spilledArg.containsKey(temp)) {
-    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp) + " " + reg + "\n";
+    	  printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp) + " " + reg + "\n";
       }
       else {
     	  String reg1 = getOneTempForUse(temp, true);
-    	  printValue += " MOVE " + reg1 + " HALLOCATE " + reg + "\n"; 
+    	  printValue += "\t" + "MOVE " + reg1 + " HALLOCATE " + reg + "\n"; 
       }
       return (R) reg;
    }
@@ -484,12 +486,12 @@ public R visit(NodeList n, A argu) {
       }
       int temp = (Integer) argu;
       if(spilledArg.containsKey(temp)) {
-    	  printValue += " MOVE v1 " + op + " " + reg1 + " " + reg2 + "\n";
-    	  printValue += " ASTORE SPILLED ARG " + spilledArg.get(temp) + " v1 " + "\n";
+    	  printValue += "\t" + "MOVE v1 " + op + " " + reg1 + " " + reg2 + "\n";
+    	  printValue += "\t" + " ASTORE SPILLED ARG " + spilledArg.get(temp) + " v1 " + "\n";
       }
       else {
     	  String reg = getOneTempForUse(temp, true);
-    	  printValue += " MOVE " + reg + " " + op + " " + reg1 + " " + reg2 + "\n"; 
+    	  printValue += "\t" + "MOVE " + reg + " " + op + " " + reg1 + " " + reg2 + "\n"; 
       }
       return _ret;
    }
