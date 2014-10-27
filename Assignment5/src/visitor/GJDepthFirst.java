@@ -76,28 +76,46 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     }
     
     public void printAllocated(Hashtable<Integer, String> a) {
-    	int i;
     	Enumeration names  = a.keys();
     	Integer temp;
     	while(names.hasMoreElements()) {
     		temp = (Integer) names.nextElement();
-    		print("");
-    		print(temp + " : ");
-    		print(a.get(temp));
+    		print(temp + " : " + a.get(temp));
     	}
     	print("");
     }
     
+    public void printSpilled(Hashtable<Integer, Integer> a) {
+    	Enumeration names  = a.keys();
+    	Integer temp;
+    	while(names.hasMoreElements()) {
+    		temp = (Integer) names.nextElement();
+    		print(temp + " : " + a.get(temp));
+    	}
+    	print("");
+    }
     public void print(Range a) {
     	print("begin : " + a.begin);
     	print("end : " + a.end);
     }
+    
     public void print(Set<Integer> a) {
     	Iterator i = a.iterator();
     	while(i.hasNext()) {
     		print((Integer) i.next());
     	}
     }
+    
+    public void printSaved(Hashtable<Integer, String> a) {
+    	Enumeration names  = a.keys();
+    	Integer temp;
+    	while(names.hasMoreElements()) {
+    		temp = (Integer) names.nextElement();
+    		print(temp + " : " + a.get(temp));
+    	}
+    	print("");
+    }
+    
     public void print(String a) {
     	System.out.println(a);
     }
