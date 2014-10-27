@@ -11,129 +11,19 @@ import java.util.*;
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
  */
-public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
+public class GJDepth3<R,A> extends GJDepth2<R,A> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
-    Hashtable<Integer, Set<Integer>> liveIn;
-    Hashtable<Integer, Set<Integer>> liveOut;
-    Hashtable<Integer, Integer> def;
-    Hashtable<Integer, Set<Integer>> uses;
-    Hashtable<Integer, Successors> succ;
-    //Hashtable<String, InAndOuts>
-    Hashtable<String, Integer> labels;
-    boolean jflag;
-    boolean startFlag;
-    Integer minusOne = new Integer(-1);
-    int stmtCount = 0;
-    
-    public class Range extends Object{
-		int begin;
-		int end;
-	}
-    
-    public int num_elem(Set<Integer> a) {
-    	return a.size();
-    }
 
-    public Integer Int(String a) {
-    	return new Integer(a);
-    }
-    
-    public Integer Int(int a) {
-    	return new Integer(a);
-    }
-    
-    public class Successors extends Object {
-        Integer first;
-        Integer second;
-    }
-
-    public void printhash(Hashtable<Integer, Set<Integer>> a) {
-    	int i;
-    	Enumeration names  = a.keys();
-    	Integer stmt;
-    	while(names.hasMoreElements()) {
-    		stmt = (Integer) names.nextElement();
-    		print("");
-    		print(stmt + " : ");
-    		print(a.get(stmt));
-    	}
-    	print("");
-    }
    
-    public void printLiveRange(Hashtable<Integer, Range> a) {
-    	int i;
-    	Enumeration names  = a.keys();
-    	Integer stmt;
-    	while(names.hasMoreElements()) {
-    		stmt = (Integer) names.nextElement();
-    		print("");
-    		print(stmt + " : ");
-    		print(a.get(stmt));
-    	}
-    	print("");
-    }
-    
-    public void printAllocated(Hashtable<Integer, String> a) {
-    	Enumeration names  = a.keys();
-    	Integer temp;
-    	while(names.hasMoreElements()) {
-    		temp = (Integer) names.nextElement();
-    		print(temp + " : " + a.get(temp));
-    	}
-    	print("");
-    }
-    
-    public void printSpilled(Hashtable<Integer, Integer> a) {
-    	Enumeration names  = a.keys();
-    	Integer temp;
-    	while(names.hasMoreElements()) {
-    		temp = (Integer) names.nextElement();
-    		print(temp + " : " + a.get(temp));
-    	}
-    	print("");
-    }
-    public void print(Range a) {
-    	print("begin : " + a.begin);
-    	print("end : " + a.end);
-    }
-    
-    public void print(Set<Integer> a) {
-    	Iterator i = a.iterator();
-    	while(i.hasNext()) {
-    		print((Integer) i.next());
-    	}
-    }
-    
-    public void printSaved(Hashtable<Integer, String> a) {
-    	Enumeration names  = a.keys();
-    	Integer temp;
-    	while(names.hasMoreElements()) {
-    		temp = (Integer) names.nextElement();
-    		print(temp + " : " + a.get(temp));
-    	}
-    	print("");
-    }
-    public void printLabels(Hashtable<String, Integer> a) {
-    	Enumeration names  = a.keys();
-    	String temp;
-    	while(names.hasMoreElements()) {
-    		temp = (String) names.nextElement();
-    		print(temp + " : " + a.get(temp));
-    	}
-    	print("");
-    }
-    
-    public void print(String a) {
-    	System.out.println(a);
-    }
-    
-    public void print(Integer a) {
-    	System.out.println(a);
-    }
-    
-   public R visit(NodeList n, A argu) {
+	String printValue = "";
+   
+   public GJDepth3(Object labels) {
+		super(labels);
+	}
+
+public R visit(NodeList n, A argu) {
       R _ret=null;
       int _count=0;
       for ( Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) {
@@ -189,19 +79,64 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     */
    public R visit(Goal n, A argu) {
       R _ret=null;
+      ArgsPassed2 required = (ArgsPassed2) argu;
+      stmtCount = 0;
+      this.allocateForMethod = required.allocateForMethod;
+	  this.spillForMethod = required.spillForMethod;
+	  this.savedRegistersForMethod = required.savedRegistersForMethod;
+	  this.argumentCount = required.argumentCount;
+	  this.thirdArgumentForMethods = required.thirdArgumentForMethods;
+	  this.stackSlots = required.stackSlots;
       n.f0.accept(this, argu);
+      currentMethod = "main";
+      int firstArgu = argumentCount.get(currentMethod);
+      int secondArgu = stackSlots.get(currentMethod);
+      int thirdArgu = thirdArgumentForMethods.get(currentMethod);
+      printValue += "MAIN" + "[" + firstArgu + "][" + secondArgu + "][" + thirdArgu + "]\n";
+      registerAllocated = allocateForMethod.get(currentMethod);
+      spilledArg = spillForMethod.get(currentMethod);
+      savedRegisters = savedRegistersForMethod.get(currentMethod);
+      astore(savedRegisters, firstArgu);
       stmtCount++;
-      labels = new Hashtable<String, Integer>();
       n.f1.accept(this, argu);
+      aload(savedRegisters, firstArgu);
       n.f2.accept(this, argu);
       stmtCount++;
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
-      //printHash(labels);
-      return (R) labels;
+      print(printValue);
+      return _ret;
    }
 
-   /**
+   public void astore(Hashtable<Integer, String> savedRegisters, int argCount) {
+	// TODO Auto-generated method stub
+	   int size = savedRegisters.size();
+	   print(size);
+	   int i = 0;
+	   int ct = 0;
+	   if(argCount > 4) {
+		   ct = argCount - 3;
+	   }
+	   while(i < size) {
+		   printValue += "ASTORE SPILLED ARG" + ct++ + "s" + i + "\n";
+		   i++;
+	   }
+   }
+
+   public void aload(Hashtable<Integer, String> savedRegisters, int argCount) {
+		// TODO Auto-generated method stub
+		   int size = savedRegisters.size();
+		   int i = 0;
+		   int ct = 0;
+		   if(argCount > 4) {
+			   ct = argCount - 3;
+		   }
+		   while(i < size) {
+			   printValue += "ALOAD " + "s" + i + "SPILLED ARG" + ct++ + "\n";
+			   i++;
+		   }
+	}
+/**
     * f0 -> ( ( Label() )? Stmt() )*
     */
    public R visit(StmtList n, A argu) {
@@ -213,15 +148,14 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
         NodeSequence n2 = (NodeSequence) n1.elementAt(i);
         NodeOptional n3 = (NodeOptional) n2.elementAt(0);
         String label = (String) n3.accept(this, argu);
-        
+
         if(n3.present()) {
-        	//print(label);
-        	//print(stmtCount);
-            labels.put(label, stmtCount);
+            printValue += label + " : " + "\n";
         }
         n2.accept(this, argu);
         i++;
-      }
+     }
+      
       return _ret;
    }
 
@@ -234,12 +168,18 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
     */
    public R visit(Procedure n, A argu) {
       R _ret=null;
-      n.f0.accept(this, argu);
+      currentMethod = (String) n.f0.accept(this, argu);
       stmtCount++;
       n.f1.accept(this, argu);
+      int firstArgu = argumentCount.get(currentMethod);
+      int secondArgu = stackSlots.get(currentMethod);
+      int thirdArgu = thirdArgumentForMethods.get(currentMethod);
+      printValue += currentMethod + "[" + firstArgu + "][" + secondArgu + "][" + thirdArgu + "]\n"; 
       n.f2.accept(this, argu);
       n.f3.accept(this, argu);
+      astore(savedRegisters, firstArgu);
       n.f4.accept(this, argu);
+      aload(savedRegisters, firstArgu);
       return _ret;
    }
 
@@ -265,6 +205,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(NoOpStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
+      printValue += "NOOP\n";
       return _ret;
    }
 
@@ -274,6 +215,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(ErrorStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
+      printValue += "ERROR\n";
       return _ret;
    }
 
@@ -285,7 +227,8 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(CJumpStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
+      int temp = (Integer) n.f1.accept(this, argu);
+      
       n.f2.accept(this, argu);
       return _ret;
    }
@@ -297,7 +240,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(JumpStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
+      printValue += "JUMP " + (String) n.f1.accept(this, argu) + "\n";
       return _ret;
    }
 
@@ -458,8 +401,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(Temp n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      return _ret;
+      return n.f1.accept(this, argu);
    }
 
    /**
@@ -468,7 +410,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(IntegerLiteral n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      return _ret;
+      return (R) Int(n.f0.toString());
    }
 
    /**
