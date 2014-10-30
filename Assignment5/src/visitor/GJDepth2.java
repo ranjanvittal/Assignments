@@ -22,7 +22,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
    //
    Hashtable<String, Integer> thirdArgumentForMethods = new Hashtable<String, Integer>();
    int maxArg;
-   
+
    public class ArgsPassed2 {
 	   Hashtable<String, Hashtable<Integer, String>> allocateForMethod;
 	   Hashtable<String, Integer> stackSlots;
@@ -30,8 +30,9 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
 	   Hashtable<String, Integer> argumentCount;
 	   Hashtable<String, Hashtable<Integer, Integer>> spillForMethod;
 	   Hashtable<String, Integer> thirdArgumentForMethods;
+	   int overallSpilt;
    }
-   
+
    public R visit(NodeList n, A argu) {
       R _ret=null;
       int _count=0;
@@ -109,7 +110,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
       arg2.spillForMethod = arg.spillForMethod;
       arg2.stackSlots = arg.stackSlots;
       arg2.thirdArgumentForMethods = thirdArgumentForMethods;
-      
+      arg2.overallSpilt =arg.overallSpilt;
       //printAllFromDepth2(arg2);
       return (R) arg2;
    }
@@ -133,7 +134,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
      print("third argument");
      printLabels(arg2.thirdArgumentForMethods);
    }
-   
+
    public void printStringIntString(
 		Hashtable<String, Hashtable<Integer, String>> stringIntString) {
 	// TODO Auto-generated method stub
@@ -142,7 +143,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
 		   String name = (String) method.nextElement();
 		   print(name + " : \n");
 		   printIntString(stringIntString.get(name));
-	   }	
+	   }
    }
 
    public void printIntString(Hashtable<Integer, String> hashtable) {
@@ -154,7 +155,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
 	   }
 	   print("\n");
    }
-   
+
    public void printIntInt(Hashtable<Integer, Integer> hashtable) {
 		// TODO Auto-generated method stub
 			Enumeration method = hashtable.keys();
@@ -173,7 +174,7 @@ public class GJDepth2<R,A> extends GJDepth<R,A> {
 			   String name = (String) method.nextElement();
 			   print(name + " : ");
 			   printIntInt(stringIntInt.get(name));
-		   }	
+		   }
 	   }
 /**
     * f0 -> ( ( Label() )? Stmt() )*

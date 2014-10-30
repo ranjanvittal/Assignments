@@ -21,7 +21,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 //		Hashtable<String, Hashtable<Integer, Set<Integer>>> useForMethod = new Hashtable<String, Hashtable<Integer, Set<Integer>>>();
 //		Hashtable<String, Hashtable<Integer, Integer>> defForMethod = new Hashtable<String, Hashtable<Integer, Integer>>();
 //		Hashtable<String, Hashtable< Integer, Range>> liveRangeForMethod = new Hashtable<String, Hashtable<Integer, Range>>();
-		
+
 		Hashtable<String, Hashtable<Integer, String>> allocateForMethod = new Hashtable<String, Hashtable<Integer, String>>();
 		Hashtable<String, Hashtable<Integer, Integer>> spillForMethod = new Hashtable<String, Hashtable<Integer, Integer>>();
 		Hashtable<String, Hashtable<Integer, String>> savedRegistersForMethod = new Hashtable<String, Hashtable<Integer, String>>();
@@ -37,7 +37,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		Hashtable<Integer, String> savedRegisters;
 		Hashtable<String, Integer> stackSlots = new Hashtable<String, Integer>();
 		int numberOfS;
-		
+		int overallSpilt = 0;
+
 		class TempBegin implements Comparator<TempBegin>, Comparable<TempBegin>{
 			   int temp;
 			   int begin;
@@ -47,7 +48,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 			      return (this.begin) - (d.begin);
 			   }
 
-			   // Overriding the compare method to sort the age 
+			   // Overriding the compare method to sort the age
 			   public int compare(TempBegin d, TempBegin d1){
 			      return d.end - d1.end;
 			   }
@@ -58,9 +59,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 			   Hashtable<String, Hashtable<Integer, String>>  savedRegistersForMethod;
 			   Hashtable<String, Integer> argumentCount;
 			   Hashtable<String, Hashtable<Integer, Integer>> spillForMethod;
+			   int overallSpilt;
 		  }
 
-		
+
 //
    // Auto class visitors--probably don't need to be overridden.
    //
@@ -68,7 +70,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     public GJDepth(Object labels) {
     	this.labels = (Hashtable<String, Integer>) labels;
     }
-    
+
     public void printSucc(Hashtable<Integer, Successors> a) {
     	Enumeration b = a.keys();
     	print("Printing succ");
@@ -80,7 +82,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     		if(s.second != null) print(s.second);
     	}
     }
-    
+
     public void printUse(Hashtable<Integer, Set<Integer>> a) {
     	Enumeration b = a.keys();
     	print("Printing uses");
@@ -91,7 +93,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     		print(s);
     	}
     }
-    
+
     public void printDef(Hashtable<Integer, Integer> a) {
     	Enumeration b = a.keys();
     	print("Printing defs");
@@ -111,10 +113,10 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 	    stackSlots.put(currentMethod, spillCount);
 	    //print(registerAllocated);
     }
-    
+
     public void makeInsAndOuts () {
        liveIn = new Hashtable<Integer, Set<Integer>>();
-       liveOut = new Hashtable<Integer, Set<Integer>>();			
+       liveOut = new Hashtable<Integer, Set<Integer>>();
        for(int i = startStmtCount; i < stmtCount; i++) {
           liveIn.put(new Integer(i), new HashSet<Integer>());
           liveOut.put(new Integer(i), new HashSet<Integer>());
@@ -129,12 +131,12 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
             Set<Integer> makingIn = new HashSet<Integer>();
             Set<Integer> makingOut = new HashSet<Integer>();
             Set<Integer> currentUses = uses.get(stmt);
-            
+
             Successors successors = succ.get(stmt);
             makingIn.addAll(outI);
             makingIn.remove(def.get(stmt));
             makingIn.addAll(currentUses);
-            
+
             liveIn.put(stmt, makingIn);
 
             overall_diff += num_elem(makingIn) - inCt;
@@ -152,9 +154,15 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
         if(overall_diff == 0)
           break;
       }
-      
+      //  if(currentMethod.compareTo("Tree_Insert") == 0) {
+      //    //print(labels.get("L13"));
+      // //   System.out.println(liveIn.get(labels.get("L13")));
+
+      //      printhash(liveIn);
+      //  }
+
    }
-    
+
    public void makeLiveRange(){
 	   liveRange = new Hashtable<Integer, Range>();
 	   int count = argumentCount.get(currentMethod);
@@ -178,7 +186,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   }
 	   }
    }
-	   
+
    public void makeRange() {
 	   Enumeration name = liveRange.keys();
 	   tempBegin = new ArrayList<TempBegin>();
@@ -192,16 +200,16 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   tempBegin.add(a);
 	   }
    }
-   
-  
-   
+
+
+
    public void allocateRegister() {
 	   active = new ArrayList<TempBegin>();
 	   spilledArg = new Hashtable<Integer, Integer>();
 	   spillCount = 0;
 	   registerAllocated = new Hashtable<Integer, String>();
 	   freeList = new ArrayList<String>();
-	   
+
 	   tempsToBeSaved();
 	   Collections.sort(tempBegin);
 	   freeList.add("t0");
@@ -217,6 +225,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    		for(int i = 0;i < tempBegin.size(); i++) {
    			expireOldIntervals(tempBegin.get(i));
    			if(active.size() == 10) {
+   				overallSpilt++;
    				spillAtInterval(tempBegin.get(i));
    			}
    			else {
@@ -231,9 +240,9 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 //   		printAllocated(registerAllocated);
 //   		print("Printing spilled registers :");
 //   		printSpilled(spilledArg);
-   		
+
 	}
-   
+
    public void expireOldIntervals(TempBegin i) {
 	   for(int j = 0;j < active.size(); j++) {
 		   if(active.get(j).end >= i.begin) return;
@@ -241,7 +250,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   freeList.add(0, registerAllocated.get(t.temp));
 	   }
    }
-   
+
    public void spillAtInterval(TempBegin i) {
            TempBegin spill = active.get(active.size()-1);
            if(spill.end > i.end) {
@@ -274,7 +283,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 	   }
 	   int i = 0;
 	   int j = 0;
-	   
+
 	   int size = tempBegin.size();
 	   while(i < size) {
 		   int temp = tempBegin.get(j).temp;
@@ -285,12 +294,12 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   i++;
 		   j++;
 	   }
-	   
+
 	   savedRegisters = new Hashtable<Integer, String>();
 	   int argCount = argumentCount.get(currentMethod);
 	   i = 0;
 	   j = 0;
-	   
+
 	   if(argCount > 4) {
 		   j = 4;
 		   while(j < argCount) {
@@ -300,6 +309,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   }
 	   }
 	   j = 0;
+
 	   while(i < 4 && j < argCount) {
 		   savedRegisters.put(i, "s" + i);
 		   toBeSaved.remove(i);
@@ -307,7 +317,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   i++;
 		   j++;
 	   }
-	   
+
 	   it = toBeSaved.iterator();
 	   while(it.hasNext() && i < 8) {
 		   int temp = (Integer) it.next();
@@ -315,16 +325,16 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
 		   spillCount++;
 		   i++;
 	   }
-	   
+
 	   //print(savedRegisters);
 	   savedRegistersForMethod.put(currentMethod, savedRegisters);
 	   //printSaved(savedRegisters);
 	   while(it.hasNext()) {
 		   spilledArg.put((Integer) it.next(), spillCount++);
 	   }
-	  
+
    }
-   
+
    public R visit(NodeList n, A argu) {
       R _ret=null;
       int _count=0;
@@ -402,6 +412,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       arg.savedRegistersForMethod = savedRegistersForMethod;
       arg.spillForMethod = spillForMethod;
       arg.stackSlots = stackSlots;
+      arg.overallSpilt = overallSpilt;
       return (R) arg;
    }
 
@@ -422,8 +433,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       //printSucc(succ);
       //printDef(def);
       //printUse(uses);
-      
-      
+
+
       return _ret;
    }
 
@@ -438,8 +449,8 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       R _ret=null;
       stmtCount++;
       currentMethod = (String) n.f0.accept(this, argu);
-      
-      
+
+
       n.f1.accept(this, argu);
       Integer i  = (Integer) n.f2.accept(this, argu);
       n.f3.accept(this, argu);
@@ -449,7 +460,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       //succForMethod.put(currentMethod, succ);
       //defForMethod.put(currentMethod, def);
       //useForMethod.put(currentMethod, uses);
-      
+
       return _ret;
    }
 
@@ -480,7 +491,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       stmtCount++;
       return _ret;
    }
-   
+
    /**
     * f0 -> NoOpStmt()
     *       | ErrorStmt()
@@ -496,7 +507,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       stmtCount++;
       if(!startFlag && !jflag) {
           Successors successor = succ.get(stmtCount - 1);
-          
+
           successor.second = new Integer(stmtCount);
       }
       jflag = false;
@@ -504,7 +515,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       startFlag = false;
       return _ret;
    }
-   
+
 
 
    /**
@@ -602,7 +613,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
    public R visit(HLoadStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      Set<Integer> use = new HashSet<Integer>(); 
+      Set<Integer> use = new HashSet<Integer>();
       def.put(stmtCount, (Integer) n.f1.accept(this, argu));
       use.add((Integer) n.f2.accept(this, argu));
       n.f3.accept(this, argu);
@@ -639,7 +650,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       n.f0.accept(this, argu);
       Integer a = (Integer) n.f1.accept(this, argu);
       Set<Integer> use = new HashSet<Integer>();
-      if(a != -1) 
+      if(a != -1)
     	  use.add(a);
       Successors s = new Successors();
       succ.put(stmtCount, s);
@@ -660,7 +671,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
     	  return n.f0.accept(this, argu);
       Integer a = (Integer) n.f0.accept(this, argu);
       Set<Integer> use = new HashSet<Integer>();
-      if(a != -1) 
+      if(a != -1)
     	  use.add(a);
       return (R) use;
    }
@@ -682,7 +693,7 @@ public class GJDepth<R,A> extends GJDepthFirst<R,A> {
       if(a != -1) {
     	  use.add(a);
       }
-      
+
       n.f2.accept(this, argu);
       Vector<Node> b = n.f3.nodes;
       int i = 0;
