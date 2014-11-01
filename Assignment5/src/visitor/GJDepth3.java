@@ -332,6 +332,7 @@ public R visit(NodeList n, A argu) {
 
 
 	   if(reg1 == "v1") {
+         printValue += "\t" + "HLOAD " + reg1 + " " + reg2 + " " + offset + "\n";
 	       printValue += "\t" + " ASTORE SPILLEDARG " + spilledArg.get(temp1) + " " + reg1 + "\n";
 	   }
 	   else {
