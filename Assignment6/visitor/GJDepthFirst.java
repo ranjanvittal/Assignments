@@ -374,7 +374,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    }
 
    /**
-    * f0 -> HAllocate()
+    * f0 -> Hallocate()
     *       | BinOp()
     *       | SimpleExp()
     */
