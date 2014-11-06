@@ -18,6 +18,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       return "\t\t.text\n\t\t.globl\t\t" + function + "\n" + function + ":\n";
   }
   String printValue = "";
+  int numberOfArgs = 0;
    public R visit(NodeList n, A argu) {
       R _ret=null;
       int _count=0;
@@ -86,24 +87,33 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       R _ret=null;
       printValue += beginFunction("main");
       n.f0.accept(this, argu);
-      printValue += "\t\tmove $fp, $sp\n";
-      printValue += "\t\tsubu $sp, $sp, 4\n";
-      printValue += "\t\tsw $ra, -4($fp)\n";
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      numberOfArgs = (Integer) n.f2.accept(this, argu);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
       n.f5.accept(this, argu);
+      numberOfArgs += 1;
+      numberOfArgs *= 4;
+      numberOfArgs += 16;
+      printValue += "\t\tmove $fp, $sp\n";
+      printValue += "\t\tsubu $sp, $sp, " + numberOfArgs + "\n";
+      printValue += "\t\tsw $ra, -4($fp)\n";
+      numberOfArgs -= 16;
+      numberOfArgs /= 4;
+      numberOfArgs -= 1;
       n.f6.accept(this, argu);
       n.f7.accept(this, argu);
       n.f8.accept(this, argu);
       n.f9.accept(this, argu);
       n.f10.accept(this, argu);
       n.f11.accept(this, argu);
+      numberOfArgs += 1;
+      numberOfArgs *= 4;
+      numberOfArgs += 16;
       printValue += "\t\tlw $ra, -4($fp)\n";
-      printValue += "\t\taddu $sp, $sp, 4\n";
+      printValue += "\t\taddu $sp, $sp, " + numberOfArgs + "\n";
       printValue += "\t\tli $v0, 10\n";
-      printValue += "\t\tsyscall\n";
+      printValue += "\t\tsyscall\n\n";
       n.f12.accept(this, argu);
       n.f13.accept(this, argu);
       n.f14.accept(this, argu);
@@ -120,7 +130,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       printValue += "\t\tjr $ra\n\n";
       printValue += "\t\t.data";
       printValue += "\t\t.align   0\n";
-      printValue += "\t\tnewl:\t.asciiz \"\\n\"\n";
+      printValue += "newl:\t\t.asciiz \"\\n\"\n\n";
       printValue += "\t\t.data\n";
       printValue += "\t\t.align 0\n";
       printValue += "str_er:  .asciiz \" ERROR: abnormal termination\\n\"\n ";
@@ -165,13 +175,13 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       R _ret=null;
       String function = (String) n.f0.accept(this, argu);
       n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      numberOfArgs = (Integer) n.f2.accept(this, argu);
       n.f3.accept(this, argu);
       n.f4.accept(this, argu);
-      Integer stackSlots = (Integer) n.f5.accept(this, argu);
-      stackSlots += 1;
-      stackSlots *= 4;
-      stackSlots += 16;
+      n.f5.accept(this, argu);
+      numberOfArgs += 1;
+      numberOfArgs *= 4;
+      numberOfArgs += 16;
       n.f6.accept(this, argu);
       n.f7.accept(this, argu);
       n.f8.accept(this, argu);
@@ -179,14 +189,20 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       printValue += beginFunction(function);
       printValue += "\t\tsw $fp, -8($sp)\n";
       printValue += "\t\tmove $fp, $sp\n";
-      printValue += "\t\tsubu $sp, $sp, " + stackSlots + "\n";
+      printValue += "\t\tsubu $sp, $sp, " + numberOfArgs + "\n";
       printValue += "\t\tsw $ra, -4($fp)\n";
+      numberOfArgs -= 16;
+      numberOfArgs /= 4;
+      numberOfArgs -= 1;
       n.f10.accept(this, argu);
-      stackSlots -= 8;
+      numberOfArgs += 1;
+      numberOfArgs *= 4;
+      numberOfArgs += 16;
+      numberOfArgs -= 8;
       printValue += "\t\tlw $ra, -4($fp)\n";
-      printValue += "\t\tlw $fp, " + stackSlots + "($sp)\n";
-      stackSlots += 8;
-      printValue += "\t\taddu $sp, $sp, " + stackSlots + "\n";
+      printValue += "\t\tlw $fp, " + numberOfArgs + "($sp)\n";
+      numberOfArgs += 8;
+      printValue += "\t\taddu $sp, $sp, " + numberOfArgs + "\n";
       printValue += "\t\tjr $ra\n\n";
       n.f11.accept(this, argu);
       return _ret;
@@ -328,7 +344,10 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       n.f0.accept(this, argu);
       String register = (String) n.f1.accept(this, argu);
       Integer stackLocation = (Integer) n.f2.accept(this, argu);
-      printValue += "\t\tlw " + register + stackLocation + "($sp)\n";
+      if(stackLocation/4 + 4 < numberOfArgs)
+          printValue += "\t\tlw " + register + stackLocation + "($fp)\n";
+      else
+          printValue += "\t\tlw " + register + stackLocation + "($sp)\n";
       return _ret;
    }
 
@@ -354,8 +373,11 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(PassArgStmt n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
+      Integer offset = (Integer) n.f1.accept(this, argu);
+      String register = (String) n.f2.accept(this, argu);
+      offset -= 1;
+      offset *= 4;
+      printValue += "\t\tsw" + register + ", " + offset + "($sp)\n";
       return _ret;
    }
 
@@ -398,7 +420,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
       }
       else {
          String hallocated = (String) n.f1.accept(this, null);
-         printValue += "\t\tli $a0 " + hallocated + "\n";
+         printValue += "\t\tmove $a0 " + hallocated + "\n";
       }
       printValue += "\t\tjal _halloc\n";
       printValue += "\t\tmove " + register + "$v0\n";
@@ -413,14 +435,27 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(BinOp n, A argu) {
       R _ret=null;
       String storeRegister = (String) argu;
-      String operator = (String) n.f0.accept(this, argu);
+      Integer opCode = (Integer) n.f0.accept(this, argu);
       String registerUse = (String) n.f1.accept(this, argu);
+      String operator ="";
       if(n.f2.f0.which == 1) {
          Integer simpleExp = (Integer) n.f2.accept(this, null);
+         switch(opCode) {
+            case 0 : {operator = "\t\tslti ";break;}
+            case 1 : {operator = "\t\tadd ";break;}
+            case 2 : {operator = "\t\tsub ";break;}
+            case 3 : {operator = "\t\tmul ";break;}
+         }
          printValue += operator + storeRegister + registerUse + simpleExp + "\n";
 
       }
       else {
+        switch(opCode) {
+            case 0 : {operator = "\t\tslt ";break;}
+            case 1 : {operator = "\t\tadd ";break;}
+            case 2 : {operator = "\t\tsub ";break;}
+            case 3 : {operator = "\t\tmul ";break;}
+         }
         String simpleExp = (String) n.f2.accept(this, null);
         printValue += operator + storeRegister + registerUse + simpleExp + "\n";
       }
@@ -441,13 +476,7 @@ public class GJDepthFirst<R,A> implements GJVisitor<R,A> {
    public R visit(Operator n, A argu) {
       R _ret=null;
       n.f0.accept(this, argu);
-      switch(n.f0.which) {
-        case 0 : return (R) "\t\tslt ";
-        case 1 : return (R) "\t\tadd ";
-        case 2 : return (R) "\t\tsub ";
-        case 3 : return (R) "\t\tmul ";
-      }
-      return _ret;
+      return (R) (Integer) n.f0.which;
    }
 
    /**
